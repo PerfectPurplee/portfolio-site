@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
-import {Box} from "./Entities/box.js";
+import {Box, Car} from "./Entities/entities.js";
 import {Eventlisteners} from "./Entities/eventlistener.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 
 export class Game {
@@ -14,6 +15,7 @@ export class Game {
         this.renderer.setSize(innerWidth, innerHeight)
         document.body.appendChild(this.renderer.domElement)
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
 
         this.light = new THREE.DirectionalLight(0xffffff, 1)
         this.light.position.set(0, 5, 3);
@@ -34,8 +36,8 @@ export class Game {
 
         this.scene.add(this.light)
         this.scene.add(this.ground)
-
-        this.scene.add(this.cube)
+        this.car = new Car(this.scene)
+        // this.scene.add(this.cube)
         this.scene.add(this.light)
 
         this.eventListener = new Eventlisteners();
@@ -49,8 +51,11 @@ export class Game {
         this.renderer.render(this.scene, this.camera)
         this.controls.update();
 
+
         this.cube.updateVerticalPosition(this.ground)
         this.cube.updateHorizontalPosition(this.eventListener)
+        // this.car.updateVerticalPosition(this.ground)
+        this.car.updateHorizontalPosition(this.eventListener)
 
 
     }

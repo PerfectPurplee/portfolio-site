@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 
 export class Box extends THREE.Mesh {
@@ -44,3 +45,47 @@ export class Box extends THREE.Mesh {
             this.position.x += this.velocity;
     }
 }
+
+export class Car {
+
+    carModel;
+
+    constructor(scene) {
+
+        this.velocity = 0.03;
+        this.carModel = null;
+        this.gltfLoader = new GLTFLoader();
+        this.gltfLoader.load('./assets/car.gltf', (gltfScene) => {
+            this.carModel = gltfScene;
+            this.carModel.scene.position.set(0, 0, 0);
+            this.carModel.scene.rotation.y = Math.PI;
+            scene.add(gltfScene.scene)
+        })
+
+
+    }
+
+
+    updateVerticalPosition(ground) {
+        if (this.carModel) {
+            this.carModel.scene.position.y = ground.currentTopPosition + (this.carModel.scene.halfHeight);
+        }
+    }
+
+    updateHorizontalPosition(eventListener) {
+        if (this.carModel) {
+            if (eventListener.moveForward)
+                this.carModel.scene.position.z -= this.velocity;
+            if (eventListener.moveBackward)
+                this.carModel.scene.position.z += this.velocity;
+            if (eventListener.moveLeft)
+                this.carModel.scene.position.x -= this.velocity;
+            if (eventListener.moveRight)
+                this.carModel.scene.position.x += this.velocity;
+        }
+
+
+    }
+}
+
+
