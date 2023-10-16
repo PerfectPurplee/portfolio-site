@@ -10,7 +10,7 @@ export class Box extends THREE.Mesh {
     }) {
         super(
             new THREE.BoxGeometry(width, height, depth),
-            new THREE.MeshBasicMaterial({
+            new THREE.MeshPhongMaterial({
                 color: color,
                 shininess: 1000
             })
@@ -25,6 +25,7 @@ export class Box extends THREE.Mesh {
         this.currentBottomPosition = this.position.y - (height / 2)
         this.currentTopPosition = this.position.y + (height / 2)
 
+        this.receiveShadow = true
     }
 
     updateVerticalPosition(ground) {
@@ -49,7 +50,7 @@ export class Car {
 
     carModel;
 
-    constructor(scene) {
+    constructor(scene, carBody) {
 
         this.velocity = 0.5;
         this.carModel = null;
@@ -57,9 +58,9 @@ export class Car {
         this.gltfLoader.load('./assets/drifter/scene.gltf', (gltfScene) => {
 
             this.carModel = gltfScene;
-            this.carModel.scene.position.set(0, 0.5, 0);
+            this.carModel.scene.position.copy(carBody.position)
+            this.carModel.scene.quaternion.copy(carBody.quaternion)
             this.carModel.scene.scale.set(0.01, 0.01, 0.01)
-            this.carModel.scene.rotation.y = Math.PI / 2;
             exploreModelHierarchy(gltfScene.scene, ' ')
             this.carModel.scene.castShadow = true;
 

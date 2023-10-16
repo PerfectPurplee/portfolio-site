@@ -7,54 +7,119 @@ import {Eventlisteners} from "./Entities/eventlistener.js";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 
-
 export class Application {
     constructor() {
         this._initGraphicsWorld();
         this._initPhysicsWorld();
 
         // CANNON entities initialization
+
+        // Car Body
         const radius = 1;
-        this.sphereBody = new CANNON.Body({
-            mass: 5,
-            shape: new CANNON.Sphere(radius)
+        this.carBody = new CANNON.Body({
+            mass: 15,
+            position: new CANNON.Vec3(0, 6, 0),
+            shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
         });
-        this.sphereBody.position.set(-1, 3, 0);
-        this.physicsWorld.addBody(this.sphereBody);
 
-        this.boxBody = new CANNON.Body({
-            mass: 3,
-            shape: new CANNON.Box(new CANNON.Vec3(1, 1, 1))
+
+        this.vehicle = new CANNON.RigidVehicle({
+            chassisBody: this.carBody
         })
-        this.boxBody.position.set(-1.2, 8, 0)
-        this.physicsWorld.addBody(this.boxBody)
 
+
+        // Wheels
+        const mass = 1;
+        const axisWidth = 3;
+        const wheelShape = new CANNON.Sphere(0.5);
+        const wheelMaterial = new CANNON.Material('wheel');
+        const down = new CANNON.Vec3(0, -1, 0);
+
+        this.wheelBody1 = new CANNON.Body({
+            mass,
+            material: wheelMaterial
+        });
+        this.wheelBody1.addShape(wheelShape)
+        this.wheelBody1.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody1,
+            position: new CANNON.Vec3(2, 0, axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down,
+        });
+
+        this.wheelBody2 = new CANNON.Body({
+            mass,
+            material: wheelMaterial
+        });
+        this.wheelBody2.addShape(wheelShape)
+        this.wheelBody2.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody2,
+            position: new CANNON.Vec3(2, 0, -axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+        this.wheelBody3 = new CANNON.Body({
+            mass,
+            material: wheelMaterial
+        });
+        this.wheelBody3.addShape(wheelShape)
+        this.wheelBody3.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody3,
+            position: new CANNON.Vec3(-2, 0, axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+        this.wheelBody4 = new CANNON.Body({
+            mass,
+            material: wheelMaterial
+        });
+        this.wheelBody4.addShape(wheelShape)
+        this.wheelBody4.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody4,
+            position: new CANNON.Vec3(-2, 0, -axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+
+        this.vehicle.addToWorld(this.physicsWorld)
 
         // THREE entities initialization
-
-        this.cube = this.createEntity(2, 2, 2, 0xffffff)
-        // this.ground = this.createEntity(100, 0.4, 100, 0xfcf292)
-        const sphereGeo = new THREE.SphereGeometry(radius)
-        const material = new THREE.MeshBasicMaterial();
-        this.sphere = new THREE.Mesh(sphereGeo, material);
-        this.sphere.position.copy(this.sphereBody.position)
-        this.scene.add(this.sphere)
-        this.scene.add(this.cube)
-
-
+        this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
+        this.groundMesh = new THREE.MeshPhongMaterial({
+            color: 0xe3d68d,
+            shininess: 100
+        })
+        this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
+        this.ground.receiveShadow = true
+        this.ground.position.copy(this.groundBody.position)
+        this.ground.quaternion.copy(this.groundBody.quaternion)
+        // this.cube = this.createEntity(1, 1, 1, 0xffffff);
         // this.cube.position.y = 2;
         // this.cube.castShadow = true;
+        // this.cube.receiveShadow = true;
         //
-        // this.ground.receiveShadow = true
+        // this.cube2 = this.createEntity(10, 1, 20, 0xff0000);
+        // this.cube2.position.y = 4
+        // this.cube2.castShadow = true;
+        // this.cube2.receiveShadow = true;
 
-        // this.scene.add(this.spotLight);
-        // this.scene.add(this.ambientLight);
-        // this.scene.add(this.ground)
-        // this.car = new Car(this.scene)
-        // this.scene.add(this.light)
-
-        // createBillboard(this.scene);
+        // this.scene.add(this.cube2)
         // this.scene.add(this.cube)
+        this.scene.add(this.ground)
+        this.carMesh = new Car(this.scene, this.carBody)
+        // this.scene.add(this.spotLight);
+        this.scene.add(this.ambientLight);
+        this.scene.add(this.light)
+
+
+        this.eventListener = new Eventlisteners(this.vehicle);
 
         this.update();
 
@@ -65,22 +130,52 @@ export class Application {
 
         // Physics Update
         this.physicsWorld.fixedStep();
-        if (this.cannonDebugger)
-            this.cannonDebugger.update();
+        // if (this.cannonDebugger)
+        //     this.cannonDebugger.update();
+
+        const maxSteerVal = Math.PI / 8;
+        const maxForce = 50;
+
+        if (this.eventListener.moveForward) {
+            this.vehicle.setWheelForce(-maxForce, 0)
+            this.vehicle.setWheelForce(-maxForce, 1)
+            this.frontWheel = this.carMesh.carModel.scene.getObjectByName('Front_wheel');
+            this.frontWheel.rotation.z -= 0.03
+        }
+        if (this.eventListener.moveBackward) {
+            this.vehicle.setWheelForce(maxForce / 2, 0)
+            this.vehicle.setWheelForce(maxForce / 2, 1)
+        }
+        if (this.eventListener.moveLeft) {
+            this.vehicle.setSteeringValue(maxSteerVal, 0)
+            this.vehicle.setSteeringValue(maxSteerVal, 1)
+
+        }
+        if (this.eventListener.moveRight) {
+            this.vehicle.setSteeringValue(-maxSteerVal, 0)
+            this.vehicle.setSteeringValue(-maxSteerVal, 1)
+        }
+        if (!this.eventListener.moveForward && !this.eventListener.moveBackward) {
+            this.vehicle.setWheelForce(0, 0)
+            this.vehicle.setWheelForce(0, 1)
+        }
+        if (!this.eventListener.moveLeft && !this.eventListener.moveRight) {
+            this.vehicle.setSteeringValue(0, 0)
+            this.vehicle.setSteeringValue(0, 1)
+        }
+
 
         // Graphics Update
         this.renderer.render(this.scene, this.camera)
         this.controls.update();
 
-        this.sphere.position.copy(this.sphereBody.position)
-        this.sphere.quaternion.copy(this.sphereBody.quaternion)
-        this.cube.position.copy(this.boxBody.position)
-        this.cube.quaternion.copy(this.boxBody.quaternion)
+        if (this.carMesh.carModel && this.carBody) {
+            this.carMesh.carModel.scene.position.x = this.carBody.position.x
+            this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
+            this.carMesh.carModel.scene.position.z = this.carBody.position.z
 
-        // this.cube.updateVerticalPosition(this.ground)
-        // this.cube.updateHorizontalPosition(this.eventListener)
-        // // this.car.updateVerticalPosition(this.ground)
-        // this.car.updateHorizontalPosition(this.eventListener)
+            this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+        }
 
 
     }
@@ -104,9 +199,10 @@ export class Application {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
 
-        this.light = new THREE.DirectionalLight(0xffffff, 1)
-        this.light.position.set(0, 100, 0);
-        this.light.target = this.scene;
+        this.light = new THREE.DirectionalLight(0xffffff, 3)
+        this.light.position.set(3, 1000, 30);
+        this.light.target = (this.scene);
+        this.light.shadow.radius = 4;
         this.light.shadow.camera.near = 0.5;
         this.light.shadow.camera.far = 1000;
         this.light.shadow.camera.left = -100;
@@ -121,13 +217,11 @@ export class Application {
         this.camera.position.z = 7;
         this.camera.position.y = 5;
 
-        this.spotLight = new THREE.SpotLight(0xffffff);
-        this.spotLight.position.set(500, 1000, 500);
-        this.spotLight.castShadow = true;
+        // this.spotLight = new THREE.SpotLight(0xffffff);
+        // this.spotLight.position.set(500, 1000, 500);
+        // this.spotLight.castShadow = true;
 
         this.ambientLight = new THREE.AmbientLight(0xffffff);
-        this.spotLight.shadowMapWidth = 1024;
-        this.spotLight.shadowMapHeight = 1024;
 
 
         this.eventListener = new Eventlisteners();

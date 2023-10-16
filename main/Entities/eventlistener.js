@@ -6,6 +6,7 @@ export class Eventlisteners {
     moveBackward;
 
     constructor() {
+
         this.moveRight = false;
         this.moveLeft = false;
         this.moveForward = false;
@@ -55,6 +56,7 @@ export class Eventlisteners {
             console.log(event.code)
         })
     }
+
 
 
 }
