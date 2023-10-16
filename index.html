@@ -5,9 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Vite App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,700&family=Space+Mono&display=swap"
+          rel="stylesheet">
     <style>
         body {
             margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1 {
+            margin-bottom: 0px;
+        }
+
+        p {
+            margin-top: 4px;
+        }
+
+        .font-exo {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 26px;
+        }
+
+        .font-space-mono-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 15px;
+            letter-spacing: 2px;
+        }
+
+        .font-space-mono-button {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
         }
 
         .absolute {
@@ -15,16 +44,42 @@
         }
 
         .text-white {
-            color: #402104;
+            color: #333333;
         }
+
+        .center-div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: 2px solid #333333;
+            background-color: #fff;
+            color: #333333;
+            border-radius: 10px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
     </style>
 </head>
 <body>
 <div id="app">
-    <div class="absolute text-white">
-        <h1>Simon Balcerzak</h1>
-        <p>POWERING THE DIGITAL WORLD BEHIND THE SCENES</p>
-        <button>Explore Portfolio</button>
+    <div class="absolute text-white center-div">
+        <h1 class="font-space-mono-title">SIMON BALCERZAK</h1>
+        <p class="font-exo">POWERING THE DIGITAL WORLD BEHIND THE SCENES</p>
+        <button class="button font-space-mono-button">START JOURNEY</button>
     </div>
 </div>
 
