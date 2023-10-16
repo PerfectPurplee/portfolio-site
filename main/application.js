@@ -17,9 +17,7 @@ export class Application {
         // Car Body
         const radius = 1;
         this.carBody = new CANNON.Body({
-            mass: 15,
-            position: new CANNON.Vec3(0, 6, 0),
-            shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
+            mass: 15, position: new CANNON.Vec3(0, 6, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
         });
 
 
@@ -36,8 +34,7 @@ export class Application {
         const down = new CANNON.Vec3(0, -1, 0);
 
         this.wheelBody1 = new CANNON.Body({
-            mass,
-            material: wheelMaterial
+            mass, material: wheelMaterial
         });
         this.wheelBody1.addShape(wheelShape)
         this.wheelBody1.angularDamping = 0.4;
@@ -49,8 +46,7 @@ export class Application {
         });
 
         this.wheelBody2 = new CANNON.Body({
-            mass,
-            material: wheelMaterial
+            mass, material: wheelMaterial
         });
         this.wheelBody2.addShape(wheelShape)
         this.wheelBody2.angularDamping = 0.4;
@@ -62,8 +58,7 @@ export class Application {
         });
 
         this.wheelBody3 = new CANNON.Body({
-            mass,
-            material: wheelMaterial
+            mass, material: wheelMaterial
         });
         this.wheelBody3.addShape(wheelShape)
         this.wheelBody3.angularDamping = 0.4;
@@ -75,8 +70,7 @@ export class Application {
         });
 
         this.wheelBody4 = new CANNON.Body({
-            mass,
-            material: wheelMaterial
+            mass, material: wheelMaterial
         });
         this.wheelBody4.addShape(wheelShape)
         this.wheelBody4.angularDamping = 0.4;
@@ -93,36 +87,27 @@ export class Application {
         // THREE entities initialization
         this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
         this.groundMesh = new THREE.MeshPhongMaterial({
-            color: 0xe3d68d,
-            shininess: 100
+            color: 0xe3d68d, shininess: 100
         })
         this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
         this.ground.receiveShadow = true
         this.ground.position.copy(this.groundBody.position)
         this.ground.quaternion.copy(this.groundBody.quaternion)
-        // this.cube = this.createEntity(1, 1, 1, 0xffffff);
-        // this.cube.position.y = 2;
-        // this.cube.castShadow = true;
-        // this.cube.receiveShadow = true;
-        //
-        // this.cube2 = this.createEntity(10, 1, 20, 0xff0000);
-        // this.cube2.position.y = 4
-        // this.cube2.castShadow = true;
-        // this.cube2.receiveShadow = true;
 
-        // this.scene.add(this.cube2)
-        // this.scene.add(this.cube)
-        this.scene.add(this.ground)
+        // car model initialization
         this.carMesh = new Car(this.scene, this.carBody)
-        // this.scene.add(this.spotLight);
+
+
+        this.scene.add(this.ground)
         this.scene.add(this.ambientLight);
         this.scene.add(this.light)
 
-
         this.eventListener = new Eventlisteners(this.vehicle);
 
-        this.update();
+        this.totalWheelRotationApplied = 0;
+        this.maxWheelRotation = Math.PI / 8;
 
+        this.update();
     }
 
     update = () => {
@@ -136,24 +121,43 @@ export class Application {
         const maxSteerVal = Math.PI / 8;
         const maxForce = 50;
 
-        if (this.eventListener.moveForward) {
-            this.vehicle.setWheelForce(-maxForce, 0)
-            this.vehicle.setWheelForce(-maxForce, 1)
-            this.frontWheel = this.carMesh.carModel.scene.getObjectByName('Front_wheel');
-            this.frontWheel.rotation.z -= 0.03
-        }
-        if (this.eventListener.moveBackward) {
-            this.vehicle.setWheelForce(maxForce / 2, 0)
-            this.vehicle.setWheelForce(maxForce / 2, 1)
-        }
-        if (this.eventListener.moveLeft) {
-            this.vehicle.setSteeringValue(maxSteerVal, 0)
-            this.vehicle.setSteeringValue(maxSteerVal, 1)
+        if (this.carMesh.carModel && this.carBody) {
+            if (this.eventListener.moveForward) {
+                this.vehicle.setWheelForce(-maxForce, 0)
+                this.vehicle.setWheelForce(-maxForce, 1)
+                this.carMesh.frontLeftWheel.rotation.z -= 0.03
+                this.carMesh.frontRightWheel.rotation.z += 0.03
+                this.carMesh.backLeftWheel.rotation.z -= 0.03
+                this.carMesh.backRightWheel.rotation.z += 0.03
+            }
+            if (this.eventListener.moveBackward) {
+                this.vehicle.setWheelForce(maxForce / 2, 0)
+                this.vehicle.setWheelForce(maxForce / 2, 1)
+                this.carMesh.frontLeftWheel.rotation.z += 0.03
+                this.carMesh.frontRightWheel.rotation.z -= 0.03
+                this.carMesh.backLeftWheel.rotation.z += 0.03
+                this.carMesh.backRightWheel.rotation.z -= 0.03
+            }
+            if (this.eventListener.moveLeft) {
+                this.vehicle.setSteeringValue(maxSteerVal, 0)
+                this.vehicle.setSteeringValue(maxSteerVal, 1)
 
+                if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
+                    this.totalWheelRotationApplied -= 0.03
+                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
+                    this.carMesh.frontRightWheel.rotation.y -= 0.03;
+                }
+            }
         }
         if (this.eventListener.moveRight) {
             this.vehicle.setSteeringValue(-maxSteerVal, 0)
             this.vehicle.setSteeringValue(-maxSteerVal, 1)
+
+            if (this.totalWheelRotationApplied < this.maxWheelRotation) {
+                this.totalWheelRotationApplied += 0.03
+                this.carMesh.frontLeftWheel.rotation.y -= 0.03
+                this.carMesh.frontRightWheel.rotation.y += 0.03
+            }
         }
         if (!this.eventListener.moveForward && !this.eventListener.moveBackward) {
             this.vehicle.setWheelForce(0, 0)
@@ -162,9 +166,11 @@ export class Application {
         if (!this.eventListener.moveLeft && !this.eventListener.moveRight) {
             this.vehicle.setSteeringValue(0, 0)
             this.vehicle.setSteeringValue(0, 1)
+            this.totalWheelRotationApplied = 0;
+            this.carMesh.frontLeftWheel.rotation.y = 0;
+            this.carMesh.frontRightWheel.rotation.y = 0;
+            this.eventListener.activeKeys--;
         }
-
-
         // Graphics Update
         this.renderer.render(this.scene, this.camera)
         this.controls.update();
@@ -176,7 +182,6 @@ export class Application {
 
             this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
         }
-
 
     }
 
@@ -235,8 +240,7 @@ export class Application {
 
         // Ground
         this.groundBody = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane()
+            type: CANNON.Body.STATIC, shape: new CANNON.Plane()
         })
         this.groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
         this.physicsWorld.addBody(this.groundBody);

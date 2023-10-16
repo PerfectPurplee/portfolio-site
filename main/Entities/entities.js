@@ -61,8 +61,8 @@ export class Car {
             this.carModel.scene.position.copy(carBody.position)
             this.carModel.scene.quaternion.copy(carBody.quaternion)
             this.carModel.scene.scale.set(0.01, 0.01, 0.01)
-            exploreModelHierarchy(gltfScene.scene, ' ')
             this.carModel.scene.castShadow = true;
+            exploreModelHierarchy(gltfScene.scene, ' ')
 
             this.carModel.scene.traverse((child) => {
                 if (child.isMesh) {
@@ -71,6 +71,10 @@ export class Car {
                 }
             });
 
+            this.frontLeftWheel = this.carModel.scene.getObjectByName('Front_wheel');
+            this.frontRightWheel = this.carModel.scene.getObjectByName('Front_wheel001');
+            this.backLeftWheel = this.carModel.scene.getObjectByName('Rear_wheel');
+            this.backRightWheel = this.carModel.scene.getObjectByName('Rear_wheel001');
             scene.add(this.carModel.scene)
         })
 
