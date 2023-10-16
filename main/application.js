@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import * as dat from "dat.gui";
 import CannonDebugger from "cannon-es-debugger";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
-import {Box, Car, createBillboard} from "./Entities/entities.js";
+import {Box, Car, Billboard} from "./Entities/entities.js";
 import {Eventlisteners} from "./Entities/eventlistener.js";
+
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 
@@ -17,7 +19,8 @@ export class Application {
         // Car Body
         const radius = 1;
         this.carBody = new CANNON.Body({
-            mass: 15, position: new CANNON.Vec3(0, 6, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
+            mass: 15,
+            position: new CANNON.Vec3(-10, 6, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
         });
 
 
@@ -97,6 +100,25 @@ export class Application {
         // car model initialization
         this.carMesh = new Car(this.scene, this.carBody)
 
+        // billboard model init
+        this.billboard01 = new Billboard(this.scene, {
+            x: 30,
+            y: 0,
+            z: 5
+
+        })
+        this.billboard02 = new Billboard(this.scene, {
+            x: 50,
+            y: 0,
+            z: 5
+
+        })
+        this.billboard03 = new Billboard(this.scene, {
+            x: 70,
+            y: 0,
+            z: 5
+        })
+
 
         this.scene.add(this.ground)
         this.scene.add(this.ambientLight);
@@ -148,39 +170,40 @@ export class Application {
                     this.carMesh.frontRightWheel.rotation.y -= 0.03;
                 }
             }
-        }
-        if (this.eventListener.moveRight) {
-            this.vehicle.setSteeringValue(-maxSteerVal, 0)
-            this.vehicle.setSteeringValue(-maxSteerVal, 1)
 
-            if (this.totalWheelRotationApplied < this.maxWheelRotation) {
-                this.totalWheelRotationApplied += 0.03
-                this.carMesh.frontLeftWheel.rotation.y -= 0.03
-                this.carMesh.frontRightWheel.rotation.y += 0.03
+            if (this.eventListener.moveRight) {
+                this.vehicle.setSteeringValue(-maxSteerVal, 0)
+                this.vehicle.setSteeringValue(-maxSteerVal, 1)
+
+                if (this.totalWheelRotationApplied < this.maxWheelRotation) {
+                    this.totalWheelRotationApplied += 0.03
+                    this.carMesh.frontLeftWheel.rotation.y -= 0.03
+                    this.carMesh.frontRightWheel.rotation.y += 0.03
+                }
             }
-        }
-        if (!this.eventListener.moveForward && !this.eventListener.moveBackward) {
-            this.vehicle.setWheelForce(0, 0)
-            this.vehicle.setWheelForce(0, 1)
-        }
-        if (!this.eventListener.moveLeft && !this.eventListener.moveRight) {
-            this.vehicle.setSteeringValue(0, 0)
-            this.vehicle.setSteeringValue(0, 1)
-            this.totalWheelRotationApplied = 0;
-            this.carMesh.frontLeftWheel.rotation.y = 0;
-            this.carMesh.frontRightWheel.rotation.y = 0;
-            this.eventListener.activeKeys--;
-        }
-        // Graphics Update
-        this.renderer.render(this.scene, this.camera)
-        this.controls.update();
+            if (!this.eventListener.moveForward && !this.eventListener.moveBackward) {
+                this.vehicle.setWheelForce(0, 0)
+                this.vehicle.setWheelForce(0, 1)
+            }
+            if (!this.eventListener.moveLeft && !this.eventListener.moveRight) {
+                this.vehicle.setSteeringValue(0, 0)
+                this.vehicle.setSteeringValue(0, 1)
+                this.totalWheelRotationApplied = 0;
+                this.carMesh.frontLeftWheel.rotation.y = 0;
+                this.carMesh.frontRightWheel.rotation.y = 0;
+                this.eventListener.activeKeys--;
+            }
+            // Graphics Update
+            this.renderer.render(this.scene, this.camera)
+            this.controls.update();
 
-        if (this.carMesh.carModel && this.carBody) {
-            this.carMesh.carModel.scene.position.x = this.carBody.position.x
-            this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
-            this.carMesh.carModel.scene.position.z = this.carBody.position.z
+            if (this.carMesh.carModel && this.carBody) {
+                this.carMesh.carModel.scene.position.x = this.carBody.position.x
+                this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
+                this.carMesh.carModel.scene.position.z = this.carBody.position.z
 
-            this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+                this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+            }
         }
 
     }
@@ -218,9 +241,10 @@ export class Application {
         this.light.shadow.mapSize.width = 1024;
         this.light.shadow.mapSize.height = 1024;
         this.light.castShadow = true;
+        this.camera.position.x = -1;
+        this.camera.position.y = 27;
+        this.camera.position.z = 0;
 
-        this.camera.position.z = 7;
-        this.camera.position.y = 5;
 
         // this.spotLight = new THREE.SpotLight(0xffffff);
         // this.spotLight.position.set(500, 1000, 500);
@@ -249,8 +273,29 @@ export class Application {
 
     }
 
+    updateCameraPos = () => {
+        this.camera.position.x = cameraGui.position.x
+        this.camera.position.y = cameraGui.position.y
+        this.camera.position.z = cameraGui.position.z
+
+    }
+
 
 }
 
-new Application();
+const app = new Application();
+
+const gui = new dat.GUI()
+const cameraGui = {
+    position: {
+        x: app.camera.position.x,
+        y: app.camera.position.y,
+        z: app.camera.position.z
+    }
+}
+gui.add(cameraGui.position, 'x', -100, 100).onChange(app.updateCameraPos)
+gui.add(cameraGui.position, 'y', -100, 100).onChange(app.updateCameraPos)
+gui.add(cameraGui.position, 'z', -100, 100).onChange(app.updateCameraPos)
+
+
 

@@ -105,18 +105,38 @@ export class Car {
     }
 }
 
-export function createBillboard(scene) {
-    let billboardModel;
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.load('./assets/billboardLowPoly.gltf', (gltfScene) => {
-        billboardModel = gltfScene;
-        // billboardModel.scene.position.set(30, 0, 50);
-        // billboardModel.scene.scale.set(0.1, 0.1, 0.1)
-        billboardModel.scene.rotation.y = Math.PI / 2;
-        scene.add(gltfScene.scene)
+export class Billboard {
+    billboardModel;
 
-    })
+    constructor(scene, position = {
+        x: 0,
+        y: 0,
+        z: 0
+    }) {
+
+        this.gltfLoader = new GLTFLoader();
+        this.gltfLoader.load('./assets/billboard/scene.gltf', (gltfScene) => {
+            this.billboardModel = gltfScene;
+            this.billboardModel.scene.position.set(position.x, position.y, position.z);
+            this.billboardModel.scene.rotation.y = -Math.PI / 1.2;
+
+            this.billboardModel.castShadow = true
+            this.billboardModel.receiveShadow = true
+
+            this.billboardModel.scene.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+
+            // scene.add(gltfScene.scene)
+
+        })
+    }
 }
+
 
 function exploreModelHierarchy(obj, indent) {
     console.log(indent + obj.name);
