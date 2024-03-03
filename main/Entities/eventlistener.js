@@ -6,7 +6,7 @@ export class Eventlisteners {
     moveBackward;
 
     constructor() {
-        this.activeKeys = 0;
+
 
         this.moveRight = false;
         this.moveLeft = false;
@@ -52,11 +52,11 @@ export class Eventlisteners {
                     break;
                 case 'KeyA':
                     this.moveLeft = false;
-                    this.activeKeys += 1;
+
                     break;
                 case 'KeyD':
                     this.moveRight = false;
-                    this.activeKeys += 1;
+
                     break;
             }
             console.log(event.code)

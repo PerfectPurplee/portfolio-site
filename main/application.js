@@ -3,13 +3,14 @@ import * as CANNON from 'cannon-es';
 import * as dat from "dat.gui";
 import CannonDebugger from "cannon-es-debugger";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
-import {Box, Car, Billboard} from "./Entities/entities.js";
+import {Box, Car, Billboard, Rocks, StoneFloor} from "./Entities/entities.js";
 import {Eventlisteners} from "./Entities/eventlistener.js";
-
-import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {gsap} from "gsap";
 
 
 export class Application {
+    animationFinished;
+
     constructor() {
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -19,8 +20,8 @@ export class Application {
         // Car Body
         const radius = 1;
         this.carBody = new CANNON.Body({
-            mass: 15,
-            position: new CANNON.Vec3(-10, 6, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
+            mass: 30,
+            position: new CANNON.Vec3(-10, 0.5, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
         });
 
 
@@ -100,6 +101,7 @@ export class Application {
         // car model initialization
         this.carMesh = new Car(this.scene, this.carBody)
 
+
         // billboard model init
         this.billboard01 = new Billboard(this.scene, {
             x: 30,
@@ -119,6 +121,8 @@ export class Application {
             z: 5
         })
 
+        // terrain
+
 
         this.scene.add(this.ground)
         this.scene.add(this.ambientLight);
@@ -129,8 +133,18 @@ export class Application {
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
 
+        // Button interactions
+
+        this.welcomeButton = document.getElementById("welcomeButton")
+        this.welcomeButton.addEventListener("click", this.removeWelcomeScreen)
+        this._initTerrainAfterWelcomeScreen()
+        //
+        // camera utils
+        this.animationFinished = false;
+
         this.update();
     }
+
 
     update = () => {
         requestAnimationFrame(this.update)
@@ -191,11 +205,13 @@ export class Application {
                 this.totalWheelRotationApplied = 0;
                 this.carMesh.frontLeftWheel.rotation.y = 0;
                 this.carMesh.frontRightWheel.rotation.y = 0;
-                this.eventListener.activeKeys--;
+
             }
             // Graphics Update
             this.renderer.render(this.scene, this.camera)
-            this.controls.update();
+            this.orbitControls.update();
+            // this._thirdPersonCamera.updateCamera();
+
 
             if (this.carMesh.carModel && this.carBody) {
                 this.carMesh.carModel.scene.position.x = this.carBody.position.x
@@ -204,6 +220,21 @@ export class Application {
 
                 this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
             }
+            //     camera update
+
+
+            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished && !this.userInteracting) {
+
+                this.camera.position.x = (this.carBody.position.x - 7);
+                this.camera.position.y = (this.carBody.position.y + 6);
+                this.camera.position.z = (this.carBody.position.z - 5);
+
+                this.orbitControls.target.copy(this.carBody.position)
+
+
+            }
+            if (!this.userInteracting)
+                this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
         }
 
     }
@@ -215,6 +246,10 @@ export class Application {
     _initGraphicsWorld = () => {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 1, 1000);
+        this._thirdPersonCamera = new ThridPersonCamera({
+            camera: this.camera,
+        })
+
 
         this.renderer = new THREE.WebGLRenderer({antialias: true});
         this.renderer.setClearColor(0x000000);
@@ -224,7 +259,15 @@ export class Application {
         this.renderer.setSize(innerWidth, innerHeight)
         document.body.appendChild(this.renderer.domElement)
 
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+
+        this.orbitControls.addEventListener('start', () => {
+            this.userInteracting = true;
+        });
+
+        this.orbitControls.addEventListener('end', () => {
+            this.userInteracting = false;
+        });
 
 
         this.light = new THREE.DirectionalLight(0xffffff, 3)
@@ -280,8 +323,75 @@ export class Application {
 
     }
 
+    removeWelcomeScreen = () => {
+        const divToRemove = document.getElementById("welcomeScreen")
+        if (divToRemove) {
+            divToRemove.remove()
+            this.changeCameraPositionAfterWelcomeScreen()
+            // this._initTerrainAfterWelcomeScreen()
+        }
+    }
+    changeCameraPositionAfterWelcomeScreen = () => {
+        gsap.to(this.camera.position, {
 
+            x: this.carBody.position.x - 7,
+            y: this.carBody.position.y + 6,
+            z: this.carBody.position.z - 5,
+            duration: 3,
+
+
+            onUpdate: () => {
+
+                this.camera.updateProjectionMatrix()
+            },
+            onComplete: () => {
+                this.animationFinished = true;
+
+            }
+
+        })
+
+    }
+    _initTerrainAfterWelcomeScreen = () => {
+        // this.rock = new Rocks(this.scene)
+    }
 }
+
+class ThridPersonCamera {
+    constructor(params) {
+        this._params = params;
+        this._camera = params.camera;
+
+        this._currentPosition = new THREE.Vector3();
+        this._currentLookAt = new THREE.Vector3();
+    }
+
+    _CalculateIdealOffset() {
+        const idealOffset = new THREE.Vector3(-15, 20, -30);
+        idealOffset.applyQuaternion(this._params.target.rotation);
+        idealOffset.add(this._params.target.position);
+        return idealOffset;
+    }
+    _CalculateIdealLookAt() {
+        const idealLookAt = new THREE.Vector3(0, 10, 50);
+        idealLookAt.applyQuaternion(this._params.target.rotation);
+        idealLookAt.add(this._params.target.position);
+        return idealLookAt;
+    }
+
+
+    updateCamera() {
+        const idealOffset = this._CalculateIdealOffset();
+        const idealLookAt = this._CalculateIdealLookAt();
+
+        this._currentPosition.copy(idealOffset);
+        this._currentLookAt.copy(idealLookAt);
+
+        this._camera.position.copy(this._currentPosition);
+        this._camera.lookAt(this._currentLookAt);
+    }
+}
+
 
 const app = new Application();
 
