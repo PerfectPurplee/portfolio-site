@@ -1,0 +1,391 @@
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+import * as dat from "dat.gui";
+import CannonDebugger from "cannon-es-debugger";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {Box, Car, Billboard} from "../utils/assetloader.js";
+import {ThirdPersonCamera} from "../utils/ThirdPersonCamera.js";
+import {gsap} from "gsap";
+import {DatGui} from "../utils/datGui.js";
+import eventListenersBuilder from "../utils/listeners.js";
+
+
+export class ApplicationEngine {
+
+
+    constructor() {
+
+        this._initGraphicsWorld();
+        this._initPhysicsWorld();
+        this.setCannonEntities();
+        this.setThreeEntities();
+        this.totalWheelRotationApplied = 0;
+        this.maxWheelRotation = Math.PI / 8;
+        this.datGui = new DatGui(this)
+
+        //Listener setup
+
+
+
+        // Button interactions
+        this.welcomeButton = document.getElementById("welcomeButton")
+        this.welcomeButton.addEventListener("click", this.removeWelcomeScreen)
+
+        // utils
+        this.pointer = new THREE.Vector2();
+        this.raycaster = new THREE.Raycaster();
+        this.animationFinished = false;
+
+        this.eventHandler = eventListenersBuilder()
+        this.eventHandler.setOnPointerMoveListener(this.pointer);
+        this.eventHandler.setKeyUPEventListener()
+        this.eventHandler.setKeyDownEventListener()
+        this.eventHandler.setResizeEventListener(this.camera, this.renderer)
+
+        // starts game loop
+
+        this.update();
+    }
+
+    setCannonEntities = () => {
+        // CANNON entities initialization
+
+        // Car Body
+        const radius = 1;
+        this.carBody = new CANNON.Body({
+            mass: 30,
+            position: new CANNON.Vec3(-10, 0.5, 0), shape: new CANNON.Box(new CANNON.Vec3(1, 0.3, 1.5))
+        });
+
+
+        this.vehicle = new CANNON.RigidVehicle({
+            chassisBody: this.carBody
+        })
+
+        // Wheels
+        const mass = 1;
+        const axisWidth = 3;
+        const wheelShape = new CANNON.Sphere(0.5);
+        const wheelMaterial = new CANNON.Material('wheel');
+        const down = new CANNON.Vec3(0, -1, 0);
+
+        this.wheelBody1 = new CANNON.Body({
+            mass, material: wheelMaterial
+        });
+        this.wheelBody1.addShape(wheelShape)
+        this.wheelBody1.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody1,
+            position: new CANNON.Vec3(2, 0, axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down,
+        });
+
+        this.wheelBody2 = new CANNON.Body({
+            mass, material: wheelMaterial
+        });
+        this.wheelBody2.addShape(wheelShape)
+        this.wheelBody2.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody2,
+            position: new CANNON.Vec3(2, 0, -axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+        this.wheelBody3 = new CANNON.Body({
+            mass, material: wheelMaterial
+        });
+        this.wheelBody3.addShape(wheelShape)
+        this.wheelBody3.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody3,
+            position: new CANNON.Vec3(-2, 0, axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+        this.wheelBody4 = new CANNON.Body({
+            mass, material: wheelMaterial
+        });
+        this.wheelBody4.addShape(wheelShape)
+        this.wheelBody4.angularDamping = 0.4;
+        this.vehicle.addWheel({
+            body: this.wheelBody4,
+            position: new CANNON.Vec3(-2, 0, -axisWidth / 2),
+            axis: new CANNON.Vec3(0, 0, 1),
+            direction: down
+        });
+
+        this.vehicle.addToWorld(this.physicsWorld)
+    }
+    setThreeEntities = () => {
+        // THREE entities initialization
+        this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
+        this.groundMesh = new THREE.MeshPhongMaterial({
+            color: 0xe3d68d, shininess: 100
+        })
+        this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
+        this.ground.receiveShadow = true
+        this.ground.position.copy(this.groundBody.position)
+        this.ground.quaternion.copy(this.groundBody.quaternion)
+
+        // car model initialization
+        this.carMesh = new Car(this.scene, this.carBody)
+
+
+        // billboard model init
+        this.billboard01 = new Billboard(this.scene,
+            {
+                x: 40,
+                y: 0,
+                z: -16.5
+
+            },
+            -1.58
+        )
+        this.billboard02 = new Billboard(this.scene, {
+                x: 45,
+                y: 0,
+                z: 0.5
+            },
+            -2.3
+        )
+        this.billboard03 = new Billboard(this.scene, {
+                x: 27,
+                y: 0,
+                z: -28
+            },
+            -1
+        )
+
+        // terrain
+
+
+        this.scene.add(this.ground)
+        this.scene.add(this.ambientLight);
+        this.scene.add(this.light)
+    }
+    update = () => {
+        requestAnimationFrame(this.update)
+
+        // Physics Update
+        this.physicsWorld.fixedStep();
+        // if (this.cannonDebugger)
+        //     this.cannonDebugger.update();
+
+        const maxSteerVal = Math.PI / 8;
+        const maxForce = 50;
+
+        if (this.carMesh.carModel && this.carBody) {
+            if (this.eventHandler.moveForward) {
+                this.vehicle.setWheelForce(-maxForce, 0)
+                this.vehicle.setWheelForce(-maxForce, 1)
+                this.carMesh.frontLeftWheel.rotation.z -= 0.03
+                this.carMesh.frontRightWheel.rotation.z += 0.03
+                this.carMesh.backLeftWheel.rotation.z -= 0.03
+                this.carMesh.backRightWheel.rotation.z += 0.03
+            }
+            if (this.eventHandler.moveBackward) {
+                this.vehicle.setWheelForce(maxForce / 2, 0)
+                this.vehicle.setWheelForce(maxForce / 2, 1)
+                this.carMesh.frontLeftWheel.rotation.z += 0.03
+                this.carMesh.frontRightWheel.rotation.z -= 0.03
+                this.carMesh.backLeftWheel.rotation.z += 0.03
+                this.carMesh.backRightWheel.rotation.z -= 0.03
+            }
+            if (this.eventHandler.moveLeft) {
+                this.vehicle.setSteeringValue(maxSteerVal, 0)
+                this.vehicle.setSteeringValue(maxSteerVal, 1)
+
+                if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
+                    this.totalWheelRotationApplied -= 0.03
+                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
+                    this.carMesh.frontRightWheel.rotation.y -= 0.03;
+                }
+            }
+
+            if (this.eventHandler.moveRight) {
+                this.vehicle.setSteeringValue(-maxSteerVal, 0)
+                this.vehicle.setSteeringValue(-maxSteerVal, 1)
+
+                if (this.totalWheelRotationApplied < this.maxWheelRotation) {
+                    this.totalWheelRotationApplied += 0.03
+                    this.carMesh.frontLeftWheel.rotation.y -= 0.03
+                    this.carMesh.frontRightWheel.rotation.y += 0.03
+                }
+            }
+            if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
+                this.vehicle.setWheelForce(0, 0)
+                this.vehicle.setWheelForce(0, 1)
+            }
+            if (!this.eventHandler.moveLeft && !this.eventHandler.moveRight) {
+                this.vehicle.setSteeringValue(0, 0)
+                this.vehicle.setSteeringValue(0, 1)
+                this.totalWheelRotationApplied = 0;
+                this.carMesh.frontLeftWheel.rotation.y = 0;
+                this.carMesh.frontRightWheel.rotation.y = 0;
+
+            }
+            // Graphics Update
+            this.renderer.render(this.scene, this.camera)
+            // this.orbitControls.update();
+            // this._thirdPersonCamera.updateCamera();
+
+            // Raycaster
+            this.raycaster.setFromCamera(this.pointer, this.camera)
+            // if(this.raycaster.intersectObject(this.carMesh)) {
+            //     console.log("Dziala")
+            // }
+
+
+            if (this.carMesh.carModel && this.carBody) {
+                this.carMesh.carModel.scene.position.x = this.carBody.position.x
+                this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
+                this.carMesh.carModel.scene.position.z = this.carBody.position.z
+
+                this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+            }
+            //     camera update
+
+
+            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished && !this.userInteracting) {
+
+                this.camera.position.x = (this.carBody.position.x - 8);
+                this.camera.position.y = (this.carBody.position.y + 6);
+                this.camera.position.z = (this.carBody.position.z);
+
+                // this.orbitControls.target.copy(this.carBody.position)
+
+
+            }
+            if (!this.userInteracting)
+                this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
+        }
+
+    }
+    createEntity = (width, height, depth, color) => {
+        return new Box(width, height, depth, color)
+    }
+    _initGraphicsWorld = () => {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 1, 1000);
+        this._thirdPersonCamera = new ThirdPersonCamera({
+            camera: this.camera,
+        })
+
+
+        this.renderer = new THREE.WebGLRenderer({antialias: true});
+        this.renderer.setClearColor(0x000000);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.setSize(innerWidth, innerHeight)
+        document.body.appendChild(this.renderer.domElement)
+
+        // this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+
+        // this.orbitControls.addEventListener('start', () => {
+        //     this.userInteracting = true;
+        // });
+        //
+        // this.orbitControls.addEventListener('end', () => {
+        //     this.userInteracting = false;
+        // });
+
+
+        this.light = new THREE.DirectionalLight(0xffffff, 3)
+        this.light.position.set(3, 1000, 30);
+        this.light.target = (this.scene);
+        this.light.shadow.radius = 4;
+        this.light.shadow.camera.near = 0.5;
+        this.light.shadow.camera.far = 1000;
+        this.light.shadow.camera.left = -100;
+        this.light.shadow.camera.right = 100;
+        this.light.shadow.camera.top = 100;
+        this.light.shadow.camera.bottom = -100;
+        this.light.shadow.bias = -0.002;
+        this.light.shadow.mapSize.width = 1024;
+        this.light.shadow.mapSize.height = 1024;
+        this.light.castShadow = true;
+        this.camera.position.x = -1;
+        this.camera.position.y = 27;
+        this.camera.position.z = 0;
+
+
+        // this.spotLight = new THREE.SpotLight(0xffffff);
+        // this.spotLight.position.set(500, 1000, 500);
+        // this.spotLight.castShadow = true;
+
+        this.ambientLight = new THREE.AmbientLight(0xffffff);
+
+
+    }
+    _initPhysicsWorld = () => {
+        this.physicsWorld = new CANNON.World({
+            gravity: new CANNON.Vec3(0, -9.82, 0)
+        })
+
+        // Ground
+        this.groundBody = new CANNON.Body({
+            type: CANNON.Body.STATIC, shape: new CANNON.Plane()
+        })
+        this.groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+        this.physicsWorld.addBody(this.groundBody);
+
+        this.cannonDebugger = new CannonDebugger(this.scene, this.physicsWorld, {});
+
+    }
+    // updateCameraPos = () => {
+    //     this.camera.position.x = this.datGui.cameraGui.position.x
+    //     this.camera.position.y = this.datGui.cameraGui.position.y
+    //     this.camera.position.z = this.datGui.cameraGui.position.z
+    // }
+    updateBillboardPos = (billboard, billboardGui) => {
+        if (billboard) {
+            billboard.billboardModel.scene.position.set(
+                billboardGui.position.x,
+                billboardGui.position.y,
+                billboardGui.position.z
+            );
+            billboard.billboardModel.scene.rotation.y = billboardGui.position.rotation
+        }
+    }
+    updateAllBillboardsPositions = () => {
+        this.updateBillboardPos(this.billboard01, this.datGui.billboard1Gui)
+        this.updateBillboardPos(this.billboard02, this.datGui.billboard2Gui)
+        this.updateBillboardPos(this.billboard03, this.datGui.billboard3Gui)
+    }
+    removeWelcomeScreen = () => {
+        const divToRemove = document.getElementById("welcomeScreen")
+        if (divToRemove) {
+            divToRemove.remove()
+            this.changeCameraPositionAfterWelcomeScreen()
+        }
+    }
+    changeCameraPositionAfterWelcomeScreen = () => {
+        gsap.to(this.camera.position, {
+
+            x: this.carBody.position.x - 8,
+            y: this.carBody.position.y + 6,
+            z: this.carBody.position.z,
+            duration: 3,
+
+
+            onUpdate: () => {
+
+                this.camera.updateProjectionMatrix()
+            },
+            onComplete: () => {
+                this.animationFinished = true;
+
+            }
+
+        })
+
+    }
+
+}
+
+
+

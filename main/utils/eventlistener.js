@@ -1,3 +1,4 @@
+
 export class Eventlisteners {
 
     moveRight;
@@ -5,20 +6,23 @@ export class Eventlisteners {
     moveForward;
     moveBackward;
 
-    constructor() {
-
+    constructor(app) {
+        this.app = app
 
         this.moveRight = false;
         this.moveLeft = false;
         this.moveForward = false;
         this.moveBackward = false;
 
-        this.setupKeyDownEventListener();
-        this.setupKeyUPEventListener();
+        this.setKeyDownEventListener()
+        this.setKeyUPEventListener()
+        // this.setResizeEventListener(app)
+        // this.setOnPointerMoveEventListener(app)
 
     }
 
-    setupKeyDownEventListener = () => {
+
+    setKeyDownEventListener = () => {
         window.addEventListener('keydown', (event) => {
             switch (event.code) {
                 case 'KeyW':
@@ -39,7 +43,7 @@ export class Eventlisteners {
         })
     }
 
-    setupKeyUPEventListener = () => {
+    setKeyUPEventListener = () => {
         window.addEventListener('keyup', (event) => {
             switch (event.code) {
                 case 'KeyW':
@@ -61,6 +65,18 @@ export class Eventlisteners {
             }
             console.log(event.code)
         })
+    }
+    setResizeEventListener = (app) => {
+        window.addEventListener('resize', (event) => {
+            app.onWindowResize()
+        })
+    }
+
+    // calculate pointer position in normalized device coordinates
+    // (-1 to +1) for both components
+    setOnPointerMoveEventListener = (app) => {
+
+
     }
 
 
