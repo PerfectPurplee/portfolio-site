@@ -14,11 +14,18 @@ const eventListenersBuilder = () => {
                 renderer.setSize(window.innerWidth, window.innerHeight)
             })
         },
-        setOnPointerMoveListener(pointer)  {
+        setOnPointerMoveListener(pointerMove)  {
             window.addEventListener('pointermove', (event) => {
-                pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-                pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                console.log(pointer.x)
+                pointerMove.x = (event.clientX / window.innerWidth) * 2 - 1;
+                pointerMove.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            })
+        },
+
+        setOnPointerClickListener(rayCasterHandler)  {
+            window.addEventListener('click', (event) => {
+                rayCasterHandler.pointerClick.x = (event.clientX / window.innerWidth) * 2 - 1;
+                rayCasterHandler.pointerClick.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                rayCasterHandler.handleRayCasterPointerClick()
             })
         },
         setKeyDownEventListener  ()  {

@@ -8,12 +8,15 @@ import {ThirdPersonCamera} from "../utils/ThirdPersonCamera.js";
 import {gsap} from "gsap";
 import {DatGui} from "../utils/datGui.js";
 import eventListenersBuilder from "../utils/listeners.js";
+import {RayCasterHandler} from "../utils/rayCasterHandler.js";
+import {CameraHandler} from "../utils/cameraHandler.js";
 
 
 export class ApplicationEngine {
 
 
     constructor() {
+        this.userInteracting = {value: false};
 
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -22,9 +25,9 @@ export class ApplicationEngine {
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
         this.datGui = new DatGui(this)
-
-        //Listener setup
-
+        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting)
+        this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
+            this.scene, this.listOfBillboards, this.userInteracting)
 
 
         // Button interactions
@@ -32,21 +35,115 @@ export class ApplicationEngine {
         this.welcomeButton.addEventListener("click", this.removeWelcomeScreen)
 
         // utils
-        this.pointer = new THREE.Vector2();
-        this.raycaster = new THREE.Raycaster();
         this.animationFinished = false;
-
+        // eventListener setup
         this.eventHandler = eventListenersBuilder()
-        this.eventHandler.setOnPointerMoveListener(this.pointer);
+        this.eventHandler.setOnPointerMoveListener(this.rayCasterHandler.pointerMove)
+        this.eventHandler.setOnPointerClickListener(this.rayCasterHandler)
         this.eventHandler.setKeyUPEventListener()
         this.eventHandler.setKeyDownEventListener()
         this.eventHandler.setResizeEventListener(this.camera, this.renderer)
 
         // starts game loop
 
+
         this.update();
     }
 
+    update = () => {
+        requestAnimationFrame(this.update)
+
+        // Physics Update
+        this.physicsWorld.fixedStep();
+        // if (this.cannonDebugger)
+        //     this.cannonDebugger.update();
+
+        const maxSteerVal = Math.PI / 8;
+        const maxForce = 50;
+
+        if (this.carMesh.carModel && this.carBody) {
+            if (this.eventHandler.moveForward) {
+                this.vehicle.setWheelForce(-maxForce, 0)
+                this.vehicle.setWheelForce(-maxForce, 1)
+                this.carMesh.frontLeftWheel.rotation.z -= 0.03
+                this.carMesh.frontRightWheel.rotation.z += 0.03
+                this.carMesh.backLeftWheel.rotation.z -= 0.03
+                this.carMesh.backRightWheel.rotation.z += 0.03
+            }
+            if (this.eventHandler.moveBackward) {
+                this.vehicle.setWheelForce(maxForce / 2, 0)
+                this.vehicle.setWheelForce(maxForce / 2, 1)
+                this.carMesh.frontLeftWheel.rotation.z += 0.03
+                this.carMesh.frontRightWheel.rotation.z -= 0.03
+                this.carMesh.backLeftWheel.rotation.z += 0.03
+                this.carMesh.backRightWheel.rotation.z -= 0.03
+            }
+            if (this.eventHandler.moveLeft) {
+                this.vehicle.setSteeringValue(maxSteerVal, 0)
+                this.vehicle.setSteeringValue(maxSteerVal, 1)
+
+                if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
+                    this.totalWheelRotationApplied -= 0.03
+                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
+                    this.carMesh.frontRightWheel.rotation.y -= 0.03;
+                }
+            }
+
+            if (this.eventHandler.moveRight) {
+                this.vehicle.setSteeringValue(-maxSteerVal, 0)
+                this.vehicle.setSteeringValue(-maxSteerVal, 1)
+
+                if (this.totalWheelRotationApplied < this.maxWheelRotation) {
+                    this.totalWheelRotationApplied += 0.03
+                    this.carMesh.frontLeftWheel.rotation.y -= 0.03
+                    this.carMesh.frontRightWheel.rotation.y += 0.03
+                }
+            }
+            if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
+                this.vehicle.setWheelForce(0, 0)
+                this.vehicle.setWheelForce(0, 1)
+            }
+            if (!this.eventHandler.moveLeft && !this.eventHandler.moveRight) {
+                this.vehicle.setSteeringValue(0, 0)
+                this.vehicle.setSteeringValue(0, 1)
+                this.totalWheelRotationApplied = 0;
+                this.carMesh.frontLeftWheel.rotation.y = 0;
+                this.carMesh.frontRightWheel.rotation.y = 0;
+
+            }
+            // Graphics Update
+            this.renderer.render(this.scene, this.camera)
+            // this.orbitControls.update();
+            // this._thirdPersonCamera.updateCamera();
+            if (this.carMesh.carModel && this.carBody) {
+                this.carMesh.carModel.scene.position.x = this.carBody.position.x
+                this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
+                this.carMesh.carModel.scene.position.z = this.carBody.position.z
+
+                this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+            }
+
+            // Raycaster spotlight handler
+            this.rayCasterHandler.handleRayCasterPointerMove()
+
+
+            //     camera update
+            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished && !this.userInteracting.value) {
+
+                this.camera.position.x = (this.carBody.position.x - 8);
+                this.camera.position.y = (this.carBody.position.y + 6);
+                this.camera.position.z = (this.carBody.position.z);
+
+                // this.orbitControls.target.copy(this.carBody.position)
+
+            }
+            if (!this.userInteracting.value)
+                this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
+        }
+
+
+
+    }
     setCannonEntities = () => {
         // CANNON entities initialization
 
@@ -135,29 +232,33 @@ export class ApplicationEngine {
 
 
         // billboard model init
-        this.billboard01 = new Billboard(this.scene,
-            {
-                x: 40,
-                y: 0,
-                z: -16.5
-
-            },
-            -1.58
-        )
-        this.billboard02 = new Billboard(this.scene, {
-                x: 45,
-                y: 0,
-                z: 0.5
-            },
-            -2.3
-        )
-        this.billboard03 = new Billboard(this.scene, {
-                x: 27,
-                y: 0,
-                z: -28
-            },
-            -1
-        )
+        this.listOfBillboards = [
+            this.billboard01 = new Billboard(this.scene, {
+                    x: 27,
+                    y: 0,
+                    z: -28
+                },
+                -1,
+                "billboard1"
+            ),
+            this.billboard02 = new Billboard(this.scene,
+                {
+                    x: 40,
+                    y: 0,
+                    z: -16.5,
+                },
+                -1.58,
+                "billboard2"
+            ),
+            this.billboard03 = new Billboard(this.scene, {
+                    x: 45,
+                    y: 0,
+                    z: 0.5
+                },
+                -2.3,
+                "billboard3"
+            )
+        ]
 
         // terrain
 
@@ -165,104 +266,6 @@ export class ApplicationEngine {
         this.scene.add(this.ground)
         this.scene.add(this.ambientLight);
         this.scene.add(this.light)
-    }
-    update = () => {
-        requestAnimationFrame(this.update)
-
-        // Physics Update
-        this.physicsWorld.fixedStep();
-        // if (this.cannonDebugger)
-        //     this.cannonDebugger.update();
-
-        const maxSteerVal = Math.PI / 8;
-        const maxForce = 50;
-
-        if (this.carMesh.carModel && this.carBody) {
-            if (this.eventHandler.moveForward) {
-                this.vehicle.setWheelForce(-maxForce, 0)
-                this.vehicle.setWheelForce(-maxForce, 1)
-                this.carMesh.frontLeftWheel.rotation.z -= 0.03
-                this.carMesh.frontRightWheel.rotation.z += 0.03
-                this.carMesh.backLeftWheel.rotation.z -= 0.03
-                this.carMesh.backRightWheel.rotation.z += 0.03
-            }
-            if (this.eventHandler.moveBackward) {
-                this.vehicle.setWheelForce(maxForce / 2, 0)
-                this.vehicle.setWheelForce(maxForce / 2, 1)
-                this.carMesh.frontLeftWheel.rotation.z += 0.03
-                this.carMesh.frontRightWheel.rotation.z -= 0.03
-                this.carMesh.backLeftWheel.rotation.z += 0.03
-                this.carMesh.backRightWheel.rotation.z -= 0.03
-            }
-            if (this.eventHandler.moveLeft) {
-                this.vehicle.setSteeringValue(maxSteerVal, 0)
-                this.vehicle.setSteeringValue(maxSteerVal, 1)
-
-                if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
-                    this.totalWheelRotationApplied -= 0.03
-                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
-                    this.carMesh.frontRightWheel.rotation.y -= 0.03;
-                }
-            }
-
-            if (this.eventHandler.moveRight) {
-                this.vehicle.setSteeringValue(-maxSteerVal, 0)
-                this.vehicle.setSteeringValue(-maxSteerVal, 1)
-
-                if (this.totalWheelRotationApplied < this.maxWheelRotation) {
-                    this.totalWheelRotationApplied += 0.03
-                    this.carMesh.frontLeftWheel.rotation.y -= 0.03
-                    this.carMesh.frontRightWheel.rotation.y += 0.03
-                }
-            }
-            if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
-                this.vehicle.setWheelForce(0, 0)
-                this.vehicle.setWheelForce(0, 1)
-            }
-            if (!this.eventHandler.moveLeft && !this.eventHandler.moveRight) {
-                this.vehicle.setSteeringValue(0, 0)
-                this.vehicle.setSteeringValue(0, 1)
-                this.totalWheelRotationApplied = 0;
-                this.carMesh.frontLeftWheel.rotation.y = 0;
-                this.carMesh.frontRightWheel.rotation.y = 0;
-
-            }
-            // Graphics Update
-            this.renderer.render(this.scene, this.camera)
-            // this.orbitControls.update();
-            // this._thirdPersonCamera.updateCamera();
-
-            // Raycaster
-            this.raycaster.setFromCamera(this.pointer, this.camera)
-            // if(this.raycaster.intersectObject(this.carMesh)) {
-            //     console.log("Dziala")
-            // }
-
-
-            if (this.carMesh.carModel && this.carBody) {
-                this.carMesh.carModel.scene.position.x = this.carBody.position.x
-                this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
-                this.carMesh.carModel.scene.position.z = this.carBody.position.z
-
-                this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
-            }
-            //     camera update
-
-
-            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished && !this.userInteracting) {
-
-                this.camera.position.x = (this.carBody.position.x - 8);
-                this.camera.position.y = (this.carBody.position.y + 6);
-                this.camera.position.z = (this.carBody.position.z);
-
-                // this.orbitControls.target.copy(this.carBody.position)
-
-
-            }
-            if (!this.userInteracting)
-                this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
-        }
-
     }
     createEntity = (width, height, depth, color) => {
         return new Box(width, height, depth, color)
@@ -385,6 +388,13 @@ export class ApplicationEngine {
 
     }
 
+    listObjectsInScene() {
+        // Iterate through the scene's children array
+        this.scene.children.forEach((object, index) => {
+            console.log(`Object ${index + 1}:`, object);
+        });
+
+    }
 }
 
 

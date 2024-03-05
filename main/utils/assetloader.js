@@ -112,26 +112,29 @@ export class Billboard {
         x: 0,
         y: 0,
         z: 0
-    }, rotation = -Math.PI / 1.2) {
+    }, rotation = -Math.PI / 1.2, name) {
+        this.name = name
 
         this.gltfLoader = new GLTFLoader();
         this.gltfLoader.load('./assets/billboard/scene.gltf', (gltfScene) => {
+
             this.billboardModel = gltfScene;
             this.billboardModel.scene.position.set(position.x, position.y, position.z);
             this.billboardModel.scene.rotation.y = rotation;
-
             this.billboardModel.castShadow = true
             this.billboardModel.receiveShadow = true
+            this.billboardModel.scene.userData.name = name
 
             this.billboardModel.scene.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    child.userData.name = name
                 }
             });
 
 
-            scene.add(gltfScene.scene)
+            scene.add(this.billboardModel.scene)
 
         })
     }
