@@ -10,6 +10,7 @@ import {DatGui} from "../utils/datGui.js";
 import eventListenersBuilder from "../utils/listeners.js";
 import {RayCasterHandler} from "../utils/rayCasterHandler.js";
 import {CameraHandler} from "../utils/cameraHandler.js";
+import {Vector2} from "three";
 
 
 export class ApplicationEngine {
@@ -17,6 +18,7 @@ export class ApplicationEngine {
 
     constructor() {
         this.userInteracting = {value: false};
+        this.cameraCurrentLookAt = null
 
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -25,10 +27,10 @@ export class ApplicationEngine {
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
         this.datGui = new DatGui(this)
-        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting)
+        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.cameraCurrentLookAt)
         this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
-            this.scene, this.listOfBillboards, this.userInteracting)
-
+            this.scene, this.listOfBillboards, this.userInteracting, this.listOFSpotLights)
+        this.createCanvasRectangleMesh()
 
         // Button interactions
         this.welcomeButton = document.getElementById("welcomeButton")
@@ -36,6 +38,7 @@ export class ApplicationEngine {
 
         // utils
         this.animationFinished = false;
+        this.justEnteredTheZone = true
         // eventListener setup
         this.eventHandler = eventListenersBuilder()
         this.eventHandler.setOnPointerMoveListener(this.rayCasterHandler.pointerMove)
@@ -45,8 +48,6 @@ export class ApplicationEngine {
         this.eventHandler.setResizeEventListener(this.camera, this.renderer)
 
         // starts game loop
-
-
         this.update();
     }
 
@@ -111,6 +112,26 @@ export class ApplicationEngine {
                 this.carMesh.frontRightWheel.rotation.y = 0;
 
             }
+            // Check for deceleration while in a zone
+
+            if (this.isCarInsideBox() && this.justEnteredTheZone) {
+                gsap.to(this.carBody.velocity, {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    duration: 1.5,
+
+                    onComplete: () => {
+                        this.userInteracting.value = true
+                        this.cameraHandler.cameraLookAtHandler(this.billboard02.billboardModel)
+
+                    }
+                })
+                this.justEnteredTheZone = false
+                // this.carBody.angularVelocity.set(0,0,0)
+            }
+
+
             // Graphics Update
             this.renderer.render(this.scene, this.camera)
             // this.orbitControls.update();
@@ -137,10 +158,16 @@ export class ApplicationEngine {
                 // this.orbitControls.target.copy(this.carBody.position)
 
             }
-            if (!this.userInteracting.value)
+            if (!this.userInteracting.value) {
                 this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
+                this.cameraCurrentLookAt = {
+                    x: this.carBody.position.x + 10,
+                    y: this.carBody.position.y,
+                    z: this.carBody.position.z
+                }
+                this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
+            }
         }
-
 
 
     }
@@ -158,6 +185,7 @@ export class ApplicationEngine {
         this.vehicle = new CANNON.RigidVehicle({
             chassisBody: this.carBody
         })
+
 
         // Wheels
         const mass = 1;
@@ -220,7 +248,7 @@ export class ApplicationEngine {
         // THREE entities initialization
         this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
         this.groundMesh = new THREE.MeshPhongMaterial({
-            color: 0xe3d68d, shininess: 100
+            color: 0xdbd9d3, shininess: 100
         })
         this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
         this.ground.receiveShadow = true
@@ -266,6 +294,13 @@ export class ApplicationEngine {
         this.scene.add(this.ground)
         this.scene.add(this.ambientLight);
         this.scene.add(this.light)
+        this.scene.add(this.spotLight1)
+        this.scene.add(this.spotLight1.target)
+        this.scene.add(this.spotLight2)
+        this.scene.add(this.spotLight2.target)
+        this.scene.add(this.spotLight3)
+        this.scene.add(this.spotLight3.target)
+        // this.scene.add(this.spotLightHelper1)
     }
     createEntity = (width, height, depth, color) => {
         return new Box(width, height, depth, color)
@@ -296,8 +331,7 @@ export class ApplicationEngine {
         //     this.userInteracting = false;
         // });
 
-
-        this.light = new THREE.DirectionalLight(0xffffff, 3)
+        this.light = new THREE.DirectionalLight(0xffffff, 2)
         this.light.position.set(3, 1000, 30);
         this.light.target = (this.scene);
         this.light.shadow.radius = 4;
@@ -316,13 +350,26 @@ export class ApplicationEngine {
         this.camera.position.z = 0;
 
 
-        // this.spotLight = new THREE.SpotLight(0xffffff);
-        // this.spotLight.position.set(500, 1000, 500);
-        // this.spotLight.castShadow = true;
+        this.spotLight1 = new THREE.SpotLight(0xFFFFFF, 75, 25.0, 0.79, 1, 2)
+        this.spotLight1.position.set(35, 16, -16)
+        this.spotLight1.target.position.set(41, -13, -14)
+        this.spotLightHelper1 = new THREE.SpotLightHelper(this.spotLight1)
+
+        this.spotLight2 = new THREE.SpotLight(0xFFFFFF, 75, 25.0, 0.79, 1, 2)
+        this.spotLight2.position.set(41, 16, 0)
+        this.spotLight2.target.position.set(34, -13, 0)
+
+        this.spotLight3 = new THREE.SpotLight(0xFFFFFF, 75, 25.0, 0.79, 1, 2)
+        this.spotLight3.position.set(34, 17, 15)
+        this.spotLight3.target.position.set(41, -13, 18)
+
+        this.listOFSpotLights = [
+            this.spotLight1,
+            this.spotLight2,
+            this.spotLight3
+        ]
 
         this.ambientLight = new THREE.AmbientLight(0xffffff);
-
-
     }
     _initPhysicsWorld = () => {
         this.physicsWorld = new CANNON.World({
@@ -386,6 +433,44 @@ export class ApplicationEngine {
 
         })
 
+    }
+
+    createCanvasRectangleMesh() {
+        // Set the size and position of the rectangle
+        const rectWidth = 15
+        const rectHeight = 33
+        const rectPosition = new THREE.Vector3(20, 0.01, 0)
+        const lineWidth = 1
+
+// Create a canvas and draw the rectangle on it
+        const canvas = document.createElement('canvas')
+        canvas.width = rectWidth
+        canvas.height = rectHeight
+        const context = canvas.getContext('2d')
+        context.strokeStyle = 'white'; // Set the rectangle color
+        context.lineWidth = lineWidth;
+        context.strokeRect(0, 0, rectWidth, rectHeight);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const geometry = new THREE.PlaneGeometry(rectWidth, rectHeight);
+        const material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, transparent: true});
+        this.rectangleMesh = new THREE.Mesh(geometry, material);
+        this.rectangleMesh.position.copy(rectPosition)
+        this.rectangleMesh.rotation.x = -Math.PI / 2
+        this.rectangleMesh.geometry.computeBoundingBox()
+        this.box = new THREE.Box2(
+            new THREE.Vector2(rectPosition.x - rectWidth / 2, rectPosition.z - rectHeight / 2), // Bottom-left corner
+            new THREE.Vector2(rectPosition.x + rectWidth / 2, rectPosition.z + rectHeight / 2)  // Top-right corner
+        );
+
+        this.scene.add(this.rectangleMesh);
+    }
+
+    isCarInsideBox() {
+        if (!this.box.containsPoint(new THREE.Vector2(this.carBody.position.x - 4, this.carBody.position.z))) {
+            this.justEnteredTheZone = true
+        }
+        return this.box.containsPoint(new THREE.Vector2(this.carBody.position.x - 4, this.carBody.position.z))
     }
 
     listObjectsInScene() {
