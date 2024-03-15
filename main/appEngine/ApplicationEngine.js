@@ -18,7 +18,7 @@ export class ApplicationEngine {
 
     constructor() {
         this.userInteracting = {value: false};
-        this.cameraCurrentLookAt = null
+        this.initialCameraLookAtBillboards = {value: false}
 
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -27,7 +27,7 @@ export class ApplicationEngine {
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
         this.datGui = new DatGui(this)
-        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.cameraCurrentLookAt)
+        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.carBody, this.initialCameraLookAtBillboards)
         this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
             this.scene, this.listOfBillboards, this.userInteracting, this.listOFSpotLights)
         this.createCanvasRectangleMesh()
@@ -122,7 +122,7 @@ export class ApplicationEngine {
                     duration: 1.5,
 
                     onComplete: () => {
-                        this.userInteracting.value = true
+                        this.initialCameraLookAtBillboards.value = true
                         this.cameraHandler.cameraLookAtHandler(this.billboard02.billboardModel)
 
                     }
@@ -149,7 +149,8 @@ export class ApplicationEngine {
 
 
             //     camera update
-            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished && !this.userInteracting.value) {
+            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished
+                && !this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
 
                 this.camera.position.x = (this.carBody.position.x - 8);
                 this.camera.position.y = (this.carBody.position.y + 6);
@@ -158,7 +159,7 @@ export class ApplicationEngine {
                 // this.orbitControls.target.copy(this.carBody.position)
 
             }
-            if (!this.userInteracting.value) {
+            if (!this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
                 this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
                 this.cameraCurrentLookAt = {
                     x: this.carBody.position.x + 10,

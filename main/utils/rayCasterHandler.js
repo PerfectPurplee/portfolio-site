@@ -53,10 +53,15 @@ export class RayCasterHandler {
         const intersectsClick = this.raycaster.intersectObjects(this.scene.children);
         if (intersectsClick.length > 0 && (intersectsClick[0].object.userData.name === "billboard1" ||
             intersectsClick[0].object.userData.name === "billboard2" ||
-            intersectsClick[0].object.userData.name === "billboard3")) {
+            intersectsClick[0].object.userData.name === "billboard3") && this.userInteracting.value === false) {
             let billboard = this.getBillboardByUserDataName(intersectsClick[0].object.userData.name)
-            this.cameraHandler.cameraLookAtAndMoveCloserHandler(billboard.billboardModel)
-        } else this.userInteracting.value = false
+            this.cameraHandler.cameraLookAtAndMoveCloserHandler(billboard)
+        } else if (this.userInteracting.value === true) {
+            this.cameraHandler.animateCameraPosToCar()
+
+        }
+
+
     }
 
     getBillboardByUserDataName(name) {
