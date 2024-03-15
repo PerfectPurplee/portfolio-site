@@ -424,7 +424,6 @@ export class ApplicationEngine {
 
             onUpdate: () => {
 
-                this.camera.updateProjectionMatrix()
             },
             onComplete: () => {
                 this.animationFinished = true;

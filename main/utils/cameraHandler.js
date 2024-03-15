@@ -53,7 +53,12 @@ export class CameraHandler {
 
             x: center.x -20,
             y: center.y,
-            z: center.z
+            z: center.z,
+            duration: 2,
+
+            onUpdate: () => {
+                this.camera.updateProjectionMatrix()
+            }
 
         })
 

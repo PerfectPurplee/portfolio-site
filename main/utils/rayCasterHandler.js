@@ -55,7 +55,7 @@ export class RayCasterHandler {
             intersectsClick[0].object.userData.name === "billboard2" ||
             intersectsClick[0].object.userData.name === "billboard3")) {
             let billboard = this.getBillboardByUserDataName(intersectsClick[0].object.userData.name)
-            this.cameraHandler.cameraLookAtHandler(billboard.billboardModel)
+            this.cameraHandler.cameraLookAtAndMoveCloserHandler(billboard.billboardModel)
         } else this.userInteracting.value = false
     }
 
