@@ -11,6 +11,7 @@ import eventListenersBuilder from "../utils/listeners.js";
 import {RayCasterHandler} from "../utils/rayCasterHandler.js";
 import {CameraHandler} from "../utils/cameraHandler.js";
 import {Vector2} from "three";
+import {Css3D} from "./Css3D.js";
 
 
 export class ApplicationEngine {
@@ -31,7 +32,7 @@ export class ApplicationEngine {
         this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
             this.scene, this.listOfBillboards, this.userInteracting, this.listOFSpotLights)
         this.createCanvasRectangleMesh()
-
+        this.css3D = new Css3D();
         // Button interactions
         this.welcomeButton = document.getElementById("welcomeButton")
         this.welcomeButton.addEventListener("click", this.removeWelcomeScreen)
@@ -134,6 +135,7 @@ export class ApplicationEngine {
 
             // Graphics Update
             this.renderer.render(this.scene, this.camera)
+
             // this.orbitControls.update();
             // this._thirdPersonCamera.updateCamera();
             if (this.carMesh.carModel && this.carBody) {
@@ -169,7 +171,7 @@ export class ApplicationEngine {
                 this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
             }
         }
-
+        this.css3D.renderer.render(this.css3D.scene, this.camera)
 
     }
     setCannonEntities = () => {
@@ -320,7 +322,8 @@ export class ApplicationEngine {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.setSize(innerWidth, innerHeight)
-        document.body.appendChild(this.renderer.domElement)
+        // document.body.appendChild(this.renderer.domElement)
+        document.getElementById('container').appendChild(this.renderer.domElement);
 
         // this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
