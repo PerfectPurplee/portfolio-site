@@ -18,6 +18,8 @@ export class DatGui {
         cameraFolder.add(app.camera.position, 'y', -100, 100)
         cameraFolder.add(app.camera.position, 'z', -100, 100)
         this.addSpotlightToGui()
+        // this.addCSS3DObjectToGui()
+        // this.addHtmlCanvasMesh()
 
 
     }
@@ -59,6 +61,32 @@ export class DatGui {
         spotLightTargetPositionFolder.add(this.spotLight.target.position, 'x', -50, 50).name('X');
         spotLightTargetPositionFolder.add(this.spotLight.target.position, 'y', -50, 50).name('Y');
         spotLightTargetPositionFolder.add(this.spotLight.target.position, 'z', -50, 50).name('Z');
+    }
+
+    addCSS3DObjectToGui() {
+        const cssFolder = this.gui.addFolder('CSS3D');
+        cssFolder.add(this.app.css3D.billBoard1Content.position, 'x', -50, 300).name('X');
+        cssFolder.add(this.app.css3D.billBoard1Content.position, 'y', -50, 300).name('Y');
+        cssFolder.add(this.app.css3D.billBoard1Content.position, 'z', -50, 300).name('Z');
+
+        cssFolder.add(this.app.css3D.billBoard1Content.rotation, 'x', -Math.PI, Math.PI).name('Rotation')
+        cssFolder.add(this.app.css3D.billBoard1Content.rotation, 'y', -Math.PI, Math.PI).name('Rotation')
+        cssFolder.add(this.app.css3D.billBoard1Content.rotation, 'z', -Math.PI, Math.PI).name('Rotation')
+
+    }
+
+    addHtmlCanvasMesh() {
+        const canvasFolder = this.gui.addFolder('HtmlCanvas');
+        canvasFolder.add(this.app.html3D.billboard1Content.position, 'x', -50, 300).name('X');
+        canvasFolder.add(this.app.html3D.billboard1Content.position, 'y', -50, 300).name('Y');
+        canvasFolder.add(this.app.html3D.billboard1Content.position, 'z', -50, 300).name('Z');
+
+        canvasFolder.add(this.app.html3D.billboard1Content.rotation, 'y', -Math.PI, Math.PI).name('Rotation')
+
+        canvasFolder.add(this.app.html3D.billboard1Content.scale, 'x', 0.1, 3).name('X');
+        canvasFolder.add(this.app.html3D.billboard1Content.scale, 'y', 0.1, 3).name('Y');
+
+
     }
 }
 

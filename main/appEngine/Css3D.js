@@ -5,15 +5,12 @@ import {CSS3DObject, CSS3DRenderer} from 'three/addons/renderers/CSS3DRenderer.j
 export class Css3D {
 
 
-    constructor() {
+    constructor(scene) {
         this._initCSS3DRenderer();
-        this.scene = new THREE.Scene();
-        this.div = document.createElement('div');
-        // div.id = 'overlay';
-        this.div.innerHTML = '<h1>HTML Content</h1><p>This is HTML content on a CSS3DObject.</p><button class="button">Click me</button>';
-        this.cssObject = new CSS3DObject(this.div);
-        this.cssObject.position.set(0, 0, 0); // Adjust position
-        this.scene.add(this.cssObject);
+        this.scene = scene;
+        this.billBoard1Content =
+            this.setHtmlDivFor3DObject('<h1>HTML Content</h1><p>This is HTML content on a CSS3DObject.</p><button class="button">Click me</button>')
+        // this.billBoard2Content
     }
 
     _initCSS3DRenderer() {
@@ -29,7 +26,15 @@ export class Css3D {
     }
 
 
-    setHtmlDivFor3DObject() {
+    setHtmlDivFor3DObject(innerHTML) {
+        let div = document.createElement('div');
+        div.innerHTML = innerHTML;
+        let cssObject = new CSS3DObject(div);
+        // cssObject.applyQuaternion()
 
+
+        cssObject.position.set(0, 0, 0); // Adjust position
+        this.scene.add(cssObject);
+        return cssObject
     }
 }
