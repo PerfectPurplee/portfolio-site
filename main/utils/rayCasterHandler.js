@@ -21,7 +21,8 @@ export class RayCasterHandler {
         this.raycaster.setFromCamera(this.pointerMove, this.camera)
         const intersectsMove = this.raycaster.intersectObjects(this.scene.children);
         // Turns on/off spotlights on billboards on mouse hover
-        if (intersectsMove.length > 0 && (intersectsMove[0].object.userData.name === "billboard1" ||
+        if (intersectsMove.length > 0 && (
+            intersectsMove[0].object.userData.name === "billboard1" ||
             intersectsMove[0].object.userData.name === "billboard2" ||
             intersectsMove[0].object.userData.name === "billboard3")) {
 
@@ -47,12 +48,36 @@ export class RayCasterHandler {
             })
         }
     }
-
+    // intersectsClick[0].object.scale.x += 5;
     handleRayCasterPointerClick() {
         this.raycaster.setFromCamera(this.pointerClick, this.camera)
         const intersectsClick = this.raycaster.intersectObjects(this.scene.children);
         console.log(intersectsClick)
-        if (intersectsClick.length > 0 && intersectsClick[0].object.userData.name === "car"
+        // Icons on billboard
+        if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
+            intersectsClick[0].object.userData.name === "billboard1" && this.userInteracting.value === true) {
+            window.open('https://github.com/PerfectPurplee/AINotesBackend', '_blank')
+        } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
+            intersectsClick[0].object.userData.name === "billboard2" && this.userInteracting.value === true) {
+            window.open('https://github.com/PerfectPurplee/Aether-Arena', '_blank')
+        } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
+            intersectsClick[0].object.userData.name === "billboard3" && this.userInteracting.value === true) {
+            window.open('https://github.com/PerfectPurplee/portfolio-site', '_blank')
+        }
+        //Icons in car
+        //LinkedIn
+        else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "linkedin-with-circle-icon-512x512-cvyrro5n") {
+            window.open('https://github.com/PerfectPurplee', '_blank')
+        // mail
+        }else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "58485698e0bb315b0f7675a8") {
+            window.open('https://github.com/PerfectPurplee/portfolio-site', '_blank')
+        // Github
+        }else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
+            intersectsClick[0].object.userData.name === "car" && this.isCameraInCar.value === true) {
+            window.open('https://github.com/PerfectPurplee', '_blank')
+        }
+        // MoveCameraIntoCar
+        else if (intersectsClick.length > 0 && intersectsClick[0].object.userData.name === "car"
             && this.userInteracting.value === false && this.isCameraInCar.value === false
             && !document.contains(document.getElementById('welcomeScreen'))) {
             this.cameraHandler.moveCameraInsideCar()
@@ -61,11 +86,14 @@ export class RayCasterHandler {
             intersectsClick[0].object.userData.name === "billboard3") && this.userInteracting.value === false) {
             let billboard = this.getBillboardByUserDataName(intersectsClick[0].object.userData.name)
             this.cameraHandler.cameraLookAtAndMoveCloserHandler(billboard)
-        } else if (this.userInteracting.value === true) {
+        } else if (intersectsClick.length > 0 && (intersectsClick[1].object.userData.name === "billboard1" ||
+            intersectsClick[1].object.userData.name === "billboard2" ||
+            intersectsClick[1].object.userData.name === "billboard3") && this.userInteracting.value === false) {
+            let billboard = this.getBillboardByUserDataName(intersectsClick[1].object.userData.name)
+            this.cameraHandler.cameraLookAtAndMoveCloserHandler(billboard)
+        } else if (this.userInteracting.value || this.isCameraInCar.value) {
             this.cameraHandler.animateCameraPosToCar()
-
         }
-
 
     }
 

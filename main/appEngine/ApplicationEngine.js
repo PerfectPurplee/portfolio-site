@@ -74,48 +74,40 @@ export class ApplicationEngine {
         const maxForce = 50;
 
         if (this.carMesh.carModel && this.carBody) {
+
+            if(this.instructionElement) {
+                if(this.eventHandler.moveForward || this.eventHandler.moveBackward ||
+                    this.eventHandler.moveLeft || this.eventHandler.moveRight)this.instructionElement.remove()
+            }
             if (this.eventHandler.moveForward) {
                 this.vehicle.setWheelForce(-maxForce, 0)
                 this.vehicle.setWheelForce(-maxForce, 1)
-                // this.carMesh.frontLeftWheel.rotation.z -= 0.03
-                // this.carMesh.frontRightWheel.rotation.z += 0.03
-                // this.carMesh.backLeftWheel.rotation.z -= 0.03
-                // this.carMesh.backRightWheel.rotation.z += 0.03
-                this.carMesh.frontWheels.rotation.x -= 0.1
-                this.carMesh.backWheels.rotation.x -= 0.1
+
+                    this.carMesh.frontLeftWheel.rotation.x -= 0.15
+                    this.carMesh.frontRightWheel.rotation.x -= 0.15
+                    this.carMesh.backWheels.rotation.x -= 0.15
+
             }
             if (this.eventHandler.moveBackward) {
                 this.vehicle.setWheelForce(maxForce / 2, 0)
                 this.vehicle.setWheelForce(maxForce / 2, 1)
-                // this.carMesh.frontLeftWheel.rotation.z += 0.03
-                // this.carMesh.frontRightWheel.rotation.z -= 0.03
-                // this.carMesh.backLeftWheel.rotation.z += 0.03
-                // this.carMesh.backRightWheel.rotation.z -= 0.03
-                this.carMesh.frontWheels.rotation.x += 0.1
-                this.carMesh.backWheels.rotation.x += 0.1
+
+                    this.carMesh.frontLeftWheel.rotation.x += 0.15
+                    this.carMesh.frontRightWheel.rotation.x += 0.15
+                    this.carMesh.backWheels.rotation.x += 0.15
+
             }
             if (this.eventHandler.moveLeft) {
                 this.vehicle.setSteeringValue(maxSteerVal, 0)
                 this.vehicle.setSteeringValue(maxSteerVal, 1)
 
-                if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
-                    this.totalWheelRotationApplied -= 0.03
-
-                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
-                    // this.carMesh.frontRightWheel.rotation.y -= 0.03;
-                }
                 if (this.carMesh.steeringWheel.rotation.y > -Math.PI / 2) this.carMesh.steeringWheel.rotation.y -= 0.1;
             }
 
             if (this.eventHandler.moveRight) {
                 this.vehicle.setSteeringValue(-maxSteerVal, 0)
                 this.vehicle.setSteeringValue(-maxSteerVal, 1)
-                if (this.totalWheelRotationApplied < this.maxWheelRotation) {
-                    this.totalWheelRotationApplied += 0.03
 
-                    // this.carMesh.frontLeftWheel.rotation.y -= 0.03
-                    // this.carMesh.frontRightWheel.rotation.y += 0.03
-                }
                 if (this.carMesh.steeringWheel.rotation.y < Math.PI / 2) this.carMesh.steeringWheel.rotation.y += 0.1;
             }
             if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
@@ -126,8 +118,6 @@ export class ApplicationEngine {
                 this.vehicle.setSteeringValue(0, 0)
                 this.vehicle.setSteeringValue(0, 1)
                 this.totalWheelRotationApplied = 0;
-                // this.carMesh.frontLeftWheel.rotation.y = 0;
-                // this.carMesh.frontRightWheel.rotation.y = 0;
 
             }
             // Check for deceleration while in a zone
@@ -389,9 +379,9 @@ export class ApplicationEngine {
         this.light.shadow.camera.right = 100;
         this.light.shadow.camera.top = 100;
         this.light.shadow.camera.bottom = -100;
-        this.light.shadow.bias = -0.002;
-        this.light.shadow.mapSize.width = 1024;
-        this.light.shadow.mapSize.height = 1024;
+        this.light.shadow.bias = -0.001;
+        this.light.shadow.mapSize.width = 8192;
+        this.light.shadow.mapSize.height = 8192;
         this.light.castShadow = true;
         this.camera.position.x = -1;
         this.camera.position.y = 27;
@@ -472,6 +462,32 @@ export class ApplicationEngine {
         }
     }
     changeCameraPositionAfterWelcomeScreen = () => {
+
+
+        this.instructionElement = document.getElementById("instruction");
+        this.instructionElement.classList.remove("hidden");
+
+        // Get the text element
+        let textElement = this.instructionElement.querySelector(".text");
+        let text = textElement.textContent.trim();
+
+        // Reset text content
+        textElement.textContent = "";
+
+        // Create spans for each letter and apply opacity animation to them
+        for (let i = 0; i < text.length; i++) {
+            let span = document.createElement("span");
+            span.textContent = text[i];
+            textElement.appendChild(span);
+
+            gsap.from(span, {
+                duration: 0.5,
+                opacity: 0,
+                delay: i * 0.02, // Delay each letter based on its position in the text
+                ease: "power2.out"
+            });
+        }
+
         gsap.to(this.camera.position, {
 
             x: this.carBody.position.x - 8,
@@ -485,6 +501,7 @@ export class ApplicationEngine {
             },
             onComplete: () => {
                 this.animationFinished = true;
+
 
             }
 
@@ -530,13 +547,6 @@ export class ApplicationEngine {
         return this.box.containsPoint(new THREE.Vector2(this.carBody.position.x - 4, this.carBody.position.z))
     }
 
-    listObjectsInScene() {
-        // Iterate through the scene's children array
-        this.scene.children.forEach((object, index) => {
-            console.log(`Object ${index + 1}:`, object);
-        });
-
-    }
 }
 
 
