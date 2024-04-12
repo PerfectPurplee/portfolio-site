@@ -10,6 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,700&family=Space+Mono&display=swap"
           rel="stylesheet">
     <style>
+
+        #container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
         body {
             margin: 0;
             -webkit-font-smoothing: antialiased;
@@ -53,6 +61,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
+            z-index: 1;
         }
 
         .button {
@@ -82,6 +91,7 @@
         <button id="welcomeButton" class="button font-space-mono-button">START JOURNEY</button>
     </div>
 </div>
+<div id="container"></div>
 
 <script type="module" src="/main/application.js"></script>
 </body>

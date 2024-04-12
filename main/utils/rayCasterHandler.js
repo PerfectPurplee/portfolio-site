@@ -3,7 +3,7 @@ import {gsap} from "gsap";
 
 export class RayCasterHandler {
 
-    constructor(cameraHandler, camera, scene, litOfBillboards, userInteracting, listOfSpotlights) {
+    constructor(cameraHandler, camera, scene, litOfBillboards, userInteracting, isCameraInCar, listOfSpotlights) {
         this.listOfSpotlights = listOfSpotlights
         this.userInteracting = userInteracting
         this.cameraHandler = cameraHandler
@@ -13,13 +13,13 @@ export class RayCasterHandler {
         this.pointerClick = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.scene = scene
+        this.isCameraInCar = isCameraInCar;
 
     }
 
     handleRayCasterPointerMove() {
         this.raycaster.setFromCamera(this.pointerMove, this.camera)
         const intersectsMove = this.raycaster.intersectObjects(this.scene.children);
-
         // Turns on/off spotlights on billboards on mouse hover
         if (intersectsMove.length > 0 && (intersectsMove[0].object.userData.name === "billboard1" ||
             intersectsMove[0].object.userData.name === "billboard2" ||
@@ -51,7 +51,12 @@ export class RayCasterHandler {
     handleRayCasterPointerClick() {
         this.raycaster.setFromCamera(this.pointerClick, this.camera)
         const intersectsClick = this.raycaster.intersectObjects(this.scene.children);
-        if (intersectsClick.length > 0 && (intersectsClick[0].object.userData.name === "billboard1" ||
+        console.log(intersectsClick)
+        if (intersectsClick.length > 0 && intersectsClick[0].object.userData.name === "car"
+            && this.userInteracting.value === false && this.isCameraInCar.value === false
+            && !document.contains(document.getElementById('welcomeScreen'))) {
+            this.cameraHandler.moveCameraInsideCar()
+        } else if (intersectsClick.length > 0 && (intersectsClick[0].object.userData.name === "billboard1" ||
             intersectsClick[0].object.userData.name === "billboard2" ||
             intersectsClick[0].object.userData.name === "billboard3") && this.userInteracting.value === false) {
             let billboard = this.getBillboardByUserDataName(intersectsClick[0].object.userData.name)

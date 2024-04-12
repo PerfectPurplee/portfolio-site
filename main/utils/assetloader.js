@@ -56,7 +56,7 @@ export class Car {
         this.velocity = 0.5;
         this.carModel = null;
         this.gltfLoader = new GLTFLoader();
-        this.gltfLoader.load('./assets/drifter/scene.gltf', (gltfScene) => {
+        this.gltfLoader.load('./assets/tesla/tesla.gltf', (gltfScene) => {
 
             this.carModel = gltfScene;
             this.carModel.scene.position.copy(carBody.position)
@@ -69,13 +69,19 @@ export class Car {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    child.userData.name = 'car';
                 }
             });
 
-            this.frontLeftWheel = this.carModel.scene.getObjectByName('Front_wheel');
+            this.frontLeftWheel = this.carModel.scene.getObjectByName('wheels_wheels3_0');
             this.frontRightWheel = this.carModel.scene.getObjectByName('Front_wheel001');
             this.backLeftWheel = this.carModel.scene.getObjectByName('Rear_wheel');
             this.backRightWheel = this.carModel.scene.getObjectByName('Rear_wheel001');
+            this.frontWheels = this.carModel.scene.getObjectByName('wheels');
+            this.backWheels = this.carModel.scene.getObjectByName('backWheels');
+            this.LCD = this.carModel.scene.getObjectByName('LCDs_LCDs0_0');
+            this.steeringWheel = this.carModel.scene.getObjectByName('movsteer_10');
+
             scene.add(this.carModel.scene)
         })
 
@@ -108,15 +114,12 @@ export class Car {
 
 export class Billboard {
 
-    constructor(scene, position = {
-        x: 0,
-        y: 0,
-        z: 0
-    }, rotation = -Math.PI / 1.2, name) {
+    constructor(scene, position = {x: 0, y: 0, z: 0},
+                rotation = -Math.PI / 1.2, name, filePath) {
         this.name = name
 
         this.gltfLoader = new GLTFLoader();
-        this.gltfLoader.load('./assets/billboard/scene.gltf', (gltfScene) => {
+        this.gltfLoader.load(filePath, (gltfScene) => {
 
             this.billboardModel = gltfScene;
             this.billboardModel.scene.position.set(position.x, position.y, position.z);

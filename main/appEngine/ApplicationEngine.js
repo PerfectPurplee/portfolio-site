@@ -10,15 +10,21 @@ import {DatGui} from "../utils/datGui.js";
 import eventListenersBuilder from "../utils/listeners.js";
 import {RayCasterHandler} from "../utils/rayCasterHandler.js";
 import {CameraHandler} from "../utils/cameraHandler.js";
+import {Video} from "../utils/Video.js";
+import {AnimationHandler} from "../utils/AnimationHandler.js";
 import {Vector2} from "three";
+import {Css3D} from "./Css3D.js";
+import {Html3D} from "../utils/Html3D.js";
 
 
 export class ApplicationEngine {
 
 
     constructor() {
+        this.groundAndSkyColor = 0xedcf93
         this.userInteracting = {value: false};
         this.initialCameraLookAtBillboards = {value: false}
+        this.isCameraInCar = {value: false};
 
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -26,11 +32,15 @@ export class ApplicationEngine {
         this.setThreeEntities();
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
-        this.datGui = new DatGui(this)
-        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.carBody, this.initialCameraLookAtBillboards)
+        this.animationHandler = new AnimationHandler(this.camera, this.carBody, this.isCameraInCar)
+        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.carBody, this.carMesh, this.isCameraInCar,
+            this.initialCameraLookAtBillboards, this.animationHandler.animateCameraToCar)
         this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
-            this.scene, this.listOfBillboards, this.userInteracting, this.listOFSpotLights)
+            this.scene, this.listOfBillboards, this.userInteracting, this.isCameraInCar, this.listOFSpotLights)
         this.createCanvasRectangleMesh()
+        this.video1 = new Video('./assets/video/AetherArena.mov', this.scene,
+            42.5, 7.7, -4.3, -Math.PI / 2, 2.9, 2);
+        // this.video2 = new Video('./assets/video/test.mkv', this.scene);
 
         // Button interactions
         this.welcomeButton = document.getElementById("welcomeButton")
@@ -46,7 +56,8 @@ export class ApplicationEngine {
         this.eventHandler.setKeyUPEventListener()
         this.eventHandler.setKeyDownEventListener()
         this.eventHandler.setResizeEventListener(this.camera, this.renderer)
-
+        this.datGui = new DatGui(this)
+        console.log(this.billboard01)
         // starts game loop
         this.update();
     }
@@ -66,18 +77,22 @@ export class ApplicationEngine {
             if (this.eventHandler.moveForward) {
                 this.vehicle.setWheelForce(-maxForce, 0)
                 this.vehicle.setWheelForce(-maxForce, 1)
-                this.carMesh.frontLeftWheel.rotation.z -= 0.03
-                this.carMesh.frontRightWheel.rotation.z += 0.03
-                this.carMesh.backLeftWheel.rotation.z -= 0.03
-                this.carMesh.backRightWheel.rotation.z += 0.03
+                // this.carMesh.frontLeftWheel.rotation.z -= 0.03
+                // this.carMesh.frontRightWheel.rotation.z += 0.03
+                // this.carMesh.backLeftWheel.rotation.z -= 0.03
+                // this.carMesh.backRightWheel.rotation.z += 0.03
+                this.carMesh.frontWheels.rotation.x -= 0.1
+                this.carMesh.backWheels.rotation.x -= 0.1
             }
             if (this.eventHandler.moveBackward) {
                 this.vehicle.setWheelForce(maxForce / 2, 0)
                 this.vehicle.setWheelForce(maxForce / 2, 1)
-                this.carMesh.frontLeftWheel.rotation.z += 0.03
-                this.carMesh.frontRightWheel.rotation.z -= 0.03
-                this.carMesh.backLeftWheel.rotation.z += 0.03
-                this.carMesh.backRightWheel.rotation.z -= 0.03
+                // this.carMesh.frontLeftWheel.rotation.z += 0.03
+                // this.carMesh.frontRightWheel.rotation.z -= 0.03
+                // this.carMesh.backLeftWheel.rotation.z += 0.03
+                // this.carMesh.backRightWheel.rotation.z -= 0.03
+                this.carMesh.frontWheels.rotation.x += 0.1
+                this.carMesh.backWheels.rotation.x += 0.1
             }
             if (this.eventHandler.moveLeft) {
                 this.vehicle.setSteeringValue(maxSteerVal, 0)
@@ -85,20 +100,23 @@ export class ApplicationEngine {
 
                 if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
                     this.totalWheelRotationApplied -= 0.03
+
                     this.carMesh.frontLeftWheel.rotation.y += 0.03;
-                    this.carMesh.frontRightWheel.rotation.y -= 0.03;
+                    // this.carMesh.frontRightWheel.rotation.y -= 0.03;
                 }
+                if (this.carMesh.steeringWheel.rotation.y > -Math.PI / 2) this.carMesh.steeringWheel.rotation.y -= 0.1;
             }
 
             if (this.eventHandler.moveRight) {
                 this.vehicle.setSteeringValue(-maxSteerVal, 0)
                 this.vehicle.setSteeringValue(-maxSteerVal, 1)
-
                 if (this.totalWheelRotationApplied < this.maxWheelRotation) {
                     this.totalWheelRotationApplied += 0.03
-                    this.carMesh.frontLeftWheel.rotation.y -= 0.03
-                    this.carMesh.frontRightWheel.rotation.y += 0.03
+
+                    // this.carMesh.frontLeftWheel.rotation.y -= 0.03
+                    // this.carMesh.frontRightWheel.rotation.y += 0.03
                 }
+                if (this.carMesh.steeringWheel.rotation.y < Math.PI / 2) this.carMesh.steeringWheel.rotation.y += 0.1;
             }
             if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
                 this.vehicle.setWheelForce(0, 0)
@@ -108,8 +126,8 @@ export class ApplicationEngine {
                 this.vehicle.setSteeringValue(0, 0)
                 this.vehicle.setSteeringValue(0, 1)
                 this.totalWheelRotationApplied = 0;
-                this.carMesh.frontLeftWheel.rotation.y = 0;
-                this.carMesh.frontRightWheel.rotation.y = 0;
+                // this.carMesh.frontLeftWheel.rotation.y = 0;
+                // this.carMesh.frontRightWheel.rotation.y = 0;
 
             }
             // Check for deceleration while in a zone
@@ -134,32 +152,42 @@ export class ApplicationEngine {
 
             // Graphics Update
             this.renderer.render(this.scene, this.camera)
-            // this.orbitControls.update();
-            // this._thirdPersonCamera.updateCamera();
+
             if (this.carMesh.carModel && this.carBody) {
                 this.carMesh.carModel.scene.position.x = this.carBody.position.x
-                this.carMesh.carModel.scene.position.y = this.carBody.position.y - 0.1
+                this.carMesh.carModel.scene.position.y = this.carBody.position.y + 0.6
+
                 this.carMesh.carModel.scene.position.z = this.carBody.position.z
 
                 this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+
+                // console.log(this.carMesh.carModel.scene.position.x)
+                // console.log(this.carMesh.carModel.scene.position.y)
+                // console.log(this.carMesh.carModel.scene.position.z)
             }
 
             // Raycaster spotlight handler
             this.rayCasterHandler.handleRayCasterPointerMove()
 
 
-            //     camera update
-            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished
-                && !this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
+            //     Camera update
+            if ((!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished
+                    && !this.userInteracting.value && !this.initialCameraLookAtBillboards.value)
+                && (!document.contains(document.getElementById('welcomeScreen')) && !this.isCameraInCar.value)) {
 
                 this.camera.position.x = (this.carBody.position.x - 8);
                 this.camera.position.y = (this.carBody.position.y + 6);
                 this.camera.position.z = (this.carBody.position.z);
 
-                // this.orbitControls.target.copy(this.carBody.position)
+            } else if (this.isCameraInCar.value) {
+                const boundingBox = new THREE.Box3().setFromObject(this.carMesh.carModel.scene);
+                const center = new THREE.Vector3();
+                boundingBox.getCenter(center);
+                this.camera.position.x = this.carBody.position.x
+                this.camera.position.z = this.carBody.position.z
 
             }
-            if (!this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
+            if (!this.userInteracting.value && !this.initialCameraLookAtBillboards.value && !this.isCameraInCar.value) {
                 this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
                 this.cameraCurrentLookAt = {
                     x: this.carBody.position.x + 10,
@@ -167,7 +195,22 @@ export class ApplicationEngine {
                     z: this.carBody.position.z
                 }
                 this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
+            } else if (this.isCameraInCar.value) {
+                const boundingBox = new THREE.Box3().setFromObject(this.carMesh.LCD);
+                const center = new THREE.Vector3();
+                boundingBox.getCenter(center);
+
+                this.camera.lookAt(center.x, center.y + 0.1, center.z)
+
+                this.cameraCurrentLookAt = {
+                    x: this.carBody.position.x + 10,
+                    y: this.carBody.position.y,
+                    z: this.carBody.position.z
+                }
+                this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
             }
+
+            // this.animationHandler.update();
         }
 
 
@@ -249,7 +292,7 @@ export class ApplicationEngine {
         // THREE entities initialization
         this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
         this.groundMesh = new THREE.MeshPhongMaterial({
-            color: 0xdbd9d3, shininess: 100
+            color: this.groundAndSkyColor, shininess: 100
         })
         this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
         this.ground.receiveShadow = true
@@ -268,7 +311,8 @@ export class ApplicationEngine {
                     z: -28
                 },
                 -1,
-                "billboard1"
+                "billboard1",
+                './assets/billboard/billboard1/untitled.gltf'
             ),
             this.billboard02 = new Billboard(this.scene,
                 {
@@ -277,7 +321,8 @@ export class ApplicationEngine {
                     z: -16.5,
                 },
                 -1.58,
-                "billboard2"
+                "billboard2",
+                './assets/billboard/billboard2/untitled.gltf'
             ),
             this.billboard03 = new Billboard(this.scene, {
                     x: 45,
@@ -285,7 +330,8 @@ export class ApplicationEngine {
                     z: 0.5
                 },
                 -2.3,
-                "billboard3"
+                "billboard3",
+                './assets/billboard/billboard3/untitled.gltf'
             )
         ]
 
@@ -320,7 +366,8 @@ export class ApplicationEngine {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.setSize(innerWidth, innerHeight)
-        document.body.appendChild(this.renderer.domElement)
+        // document.body.appendChild(this.renderer.domElement)
+        document.getElementById('container').appendChild(this.renderer.domElement);
 
         // this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
@@ -332,7 +379,7 @@ export class ApplicationEngine {
         //     this.userInteracting = false;
         // });
 
-        this.light = new THREE.DirectionalLight(0xffffff, 2)
+        this.light = new THREE.DirectionalLight(0xffffff, 2.2)
         this.light.position.set(3, 1000, 30);
         this.light.target = (this.scene);
         this.light.shadow.radius = 4;
@@ -356,7 +403,7 @@ export class ApplicationEngine {
         this.spotLight1.target.position.set(41, -13, -14)
         this.spotLightHelper1 = new THREE.SpotLightHelper(this.spotLight1)
 
-        this.spotLight2 = new THREE.SpotLight(0xFFFFFF, 75, 25.0, 0.79, 1, 2)
+        this.spotLight2 = new THREE.SpotLight(0xFFFFFF, 75, 25.0, 0.88, 1, 2)
         this.spotLight2.position.set(41, 16, 0)
         this.spotLight2.target.position.set(34, -13, 0)
 
@@ -371,6 +418,13 @@ export class ApplicationEngine {
         ]
 
         this.ambientLight = new THREE.AmbientLight(0xffffff);
+
+        // Add a skybox
+        let skyGeometry = new THREE.SphereGeometry(1000, 32, 32);
+        let skyMaterial = new THREE.MeshBasicMaterial({color: this.groundAndSkyColor, side: THREE.BackSide});
+        let sky = new THREE.Mesh(skyGeometry, skyMaterial);
+        this.scene.add(sky);
+
     }
     _initPhysicsWorld = () => {
         this.physicsWorld = new CANNON.World({
@@ -386,7 +440,10 @@ export class ApplicationEngine {
 
         this.cannonDebugger = new CannonDebugger(this.scene, this.physicsWorld, {});
 
+
     }
+
+
     // updateCameraPos = () => {
     //     this.camera.position.x = this.datGui.cameraGui.position.x
     //     this.camera.position.y = this.datGui.cameraGui.position.y
