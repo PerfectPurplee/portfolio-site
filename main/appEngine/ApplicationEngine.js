@@ -11,6 +11,7 @@ import eventListenersBuilder from "../utils/listeners.js";
 import {RayCasterHandler} from "../utils/rayCasterHandler.js";
 import {CameraHandler} from "../utils/cameraHandler.js";
 import {Video} from "../utils/Video.js";
+import {AnimationHandler} from "../utils/AnimationHandler.js";
 import {Vector2} from "three";
 import {Css3D} from "./Css3D.js";
 import {Html3D} from "../utils/Html3D.js";
@@ -23,6 +24,7 @@ export class ApplicationEngine {
         this.groundAndSkyColor = 0xedcf93
         this.userInteracting = {value: false};
         this.initialCameraLookAtBillboards = {value: false}
+        this.isCameraInCar = {value: false};
 
         this._initGraphicsWorld();
         this._initPhysicsWorld();
@@ -30,13 +32,15 @@ export class ApplicationEngine {
         this.setThreeEntities();
         this.totalWheelRotationApplied = 0;
         this.maxWheelRotation = Math.PI / 8;
-        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.carBody, this.initialCameraLookAtBillboards)
+        this.animationHandler = new AnimationHandler(this.camera, this.carBody, this.isCameraInCar)
+        this.cameraHandler = new CameraHandler(this.camera, this.userInteracting, this.carBody, this.carMesh, this.isCameraInCar,
+            this.initialCameraLookAtBillboards, this.animationHandler.animateCameraToCar)
         this.rayCasterHandler = new RayCasterHandler(this.cameraHandler, this.camera,
-            this.scene, this.listOfBillboards, this.userInteracting, this.listOFSpotLights)
+            this.scene, this.listOfBillboards, this.userInteracting, this.isCameraInCar, this.listOFSpotLights)
         this.createCanvasRectangleMesh()
-        this.video1 = new Video('./assets/video/test.mkv', this.scene);
-        // this.html3D = new Html3D(this.scene);
-        // this.css3D = new Css3D(this.scene);
+        this.video1 = new Video('./assets/video/AetherArena.mov', this.scene,
+            42.5, 7.7, -4.3, -Math.PI / 2, 2.9, 2);
+        // this.video2 = new Video('./assets/video/test.mkv', this.scene);
 
         // Button interactions
         this.welcomeButton = document.getElementById("welcomeButton")
@@ -96,20 +100,23 @@ export class ApplicationEngine {
 
                 if (this.totalWheelRotationApplied > -this.maxWheelRotation) {
                     this.totalWheelRotationApplied -= 0.03
-                    // this.carMesh.frontLeftWheel.rotation.y += 0.03;
+
+                    this.carMesh.frontLeftWheel.rotation.y += 0.03;
                     // this.carMesh.frontRightWheel.rotation.y -= 0.03;
                 }
+                if (this.carMesh.steeringWheel.rotation.y > -Math.PI / 2) this.carMesh.steeringWheel.rotation.y -= 0.1;
             }
 
             if (this.eventHandler.moveRight) {
                 this.vehicle.setSteeringValue(-maxSteerVal, 0)
                 this.vehicle.setSteeringValue(-maxSteerVal, 1)
-
                 if (this.totalWheelRotationApplied < this.maxWheelRotation) {
                     this.totalWheelRotationApplied += 0.03
+
                     // this.carMesh.frontLeftWheel.rotation.y -= 0.03
                     // this.carMesh.frontRightWheel.rotation.y += 0.03
                 }
+                if (this.carMesh.steeringWheel.rotation.y < Math.PI / 2) this.carMesh.steeringWheel.rotation.y += 0.1;
             }
             if (!this.eventHandler.moveForward && !this.eventHandler.moveBackward) {
                 this.vehicle.setWheelForce(0, 0)
@@ -145,10 +152,7 @@ export class ApplicationEngine {
 
             // Graphics Update
             this.renderer.render(this.scene, this.camera)
-            // this.css3D.renderer.render(this.scene, this.camera)
 
-            // this.orbitControls.update();
-            // this._thirdPersonCamera.updateCamera();
             if (this.carMesh.carModel && this.carBody) {
                 this.carMesh.carModel.scene.position.x = this.carBody.position.x
                 this.carMesh.carModel.scene.position.y = this.carBody.position.y + 0.6
@@ -156,24 +160,34 @@ export class ApplicationEngine {
                 this.carMesh.carModel.scene.position.z = this.carBody.position.z
 
                 this.carMesh.carModel.scene.quaternion.copy(this.carBody.quaternion)
+
+                // console.log(this.carMesh.carModel.scene.position.x)
+                // console.log(this.carMesh.carModel.scene.position.y)
+                // console.log(this.carMesh.carModel.scene.position.z)
             }
 
             // Raycaster spotlight handler
             this.rayCasterHandler.handleRayCasterPointerMove()
 
 
-            //     camera update
-            if (!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished
-                && !this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
+            //     Camera update
+            if ((!document.contains(document.getElementById('welcomeScreen')) && this.animationFinished
+                    && !this.userInteracting.value && !this.initialCameraLookAtBillboards.value)
+                && (!document.contains(document.getElementById('welcomeScreen')) && !this.isCameraInCar.value)) {
 
                 this.camera.position.x = (this.carBody.position.x - 8);
                 this.camera.position.y = (this.carBody.position.y + 6);
                 this.camera.position.z = (this.carBody.position.z);
 
-                // this.orbitControls.target.copy(this.carBody.position)
+            } else if (this.isCameraInCar.value) {
+                const boundingBox = new THREE.Box3().setFromObject(this.carMesh.carModel.scene);
+                const center = new THREE.Vector3();
+                boundingBox.getCenter(center);
+                this.camera.position.x = this.carBody.position.x
+                this.camera.position.z = this.carBody.position.z
 
             }
-            if (!this.userInteracting.value && !this.initialCameraLookAtBillboards.value) {
+            if (!this.userInteracting.value && !this.initialCameraLookAtBillboards.value && !this.isCameraInCar.value) {
                 this.camera.lookAt(this.carBody.position.x + 10, this.carBody.position.y, this.carBody.position.z)
                 this.cameraCurrentLookAt = {
                     x: this.carBody.position.x + 10,
@@ -181,7 +195,22 @@ export class ApplicationEngine {
                     z: this.carBody.position.z
                 }
                 this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
+            } else if (this.isCameraInCar.value) {
+                const boundingBox = new THREE.Box3().setFromObject(this.carMesh.LCD);
+                const center = new THREE.Vector3();
+                boundingBox.getCenter(center);
+
+                this.camera.lookAt(center.x, center.y + 0.1, center.z)
+
+                this.cameraCurrentLookAt = {
+                    x: this.carBody.position.x + 10,
+                    y: this.carBody.position.y,
+                    z: this.carBody.position.z
+                }
+                this.cameraHandler.setCurrentCameraLookAt(this.cameraCurrentLookAt)
             }
+
+            // this.animationHandler.update();
         }
 
 
@@ -263,7 +292,7 @@ export class ApplicationEngine {
         // THREE entities initialization
         this.groundGeometry = new THREE.PlaneGeometry(1000, 1000)
         this.groundMesh = new THREE.MeshPhongMaterial({
-            color:  this.groundAndSkyColor, shininess: 100
+            color: this.groundAndSkyColor, shininess: 100
         })
         this.ground = new THREE.Mesh(this.groundGeometry, this.groundMesh)
         this.ground.receiveShadow = true
@@ -392,7 +421,7 @@ export class ApplicationEngine {
 
         // Add a skybox
         let skyGeometry = new THREE.SphereGeometry(1000, 32, 32);
-        let skyMaterial = new THREE.MeshBasicMaterial({color:  this.groundAndSkyColor, side: THREE.BackSide});
+        let skyMaterial = new THREE.MeshBasicMaterial({color: this.groundAndSkyColor, side: THREE.BackSide});
         let sky = new THREE.Mesh(skyGeometry, skyMaterial);
         this.scene.add(sky);
 

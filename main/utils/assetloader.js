@@ -69,15 +69,19 @@ export class Car {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    child.userData.name = 'car';
                 }
             });
 
-            this.frontLeftWheel = this.carModel.scene.getObjectByName('Front_wheel');
+            this.frontLeftWheel = this.carModel.scene.getObjectByName('wheels_wheels3_0');
             this.frontRightWheel = this.carModel.scene.getObjectByName('Front_wheel001');
             this.backLeftWheel = this.carModel.scene.getObjectByName('Rear_wheel');
             this.backRightWheel = this.carModel.scene.getObjectByName('Rear_wheel001');
             this.frontWheels = this.carModel.scene.getObjectByName('wheels');
             this.backWheels = this.carModel.scene.getObjectByName('backWheels');
+            this.LCD = this.carModel.scene.getObjectByName('LCDs_LCDs0_0');
+            this.steeringWheel = this.carModel.scene.getObjectByName('movsteer_10');
+
             scene.add(this.carModel.scene)
         })
 

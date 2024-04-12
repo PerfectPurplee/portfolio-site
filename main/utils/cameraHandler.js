@@ -3,11 +3,14 @@ import {gsap} from "gsap";
 
 export class CameraHandler {
 
-    constructor(camera, userInteracting, carBody, initialCameraLookAtBillboards) {
+    constructor(camera, userInteracting, carBody, carMesh, isCameraInCar, initialCameraLookAtBillboards, animateCameraToCar) {
         this.camera = camera
         this.userInteracting = userInteracting
         this.carBody = carBody
         this.initialCameraLookAtBillboards = initialCameraLookAtBillboards
+        this.carMesh = carMesh;
+        this.isCameraInCar = isCameraInCar;
+        this.animateCameraToCar = animateCameraToCar;
 
     }
 
@@ -67,6 +70,64 @@ export class CameraHandler {
 
     }
 
+    moveCameraInsideCar() {
+
+        this.userInteracting.value = true
+
+        const boundingBoxLCD = new THREE.Box3().setFromObject(this.carMesh.LCD);
+        const centerLCD = new THREE.Vector3();
+        boundingBoxLCD.getCenter(centerLCD);
+
+        const boundingBox = new THREE.Box3().setFromObject(this.carMesh.carModel.scene);
+        const center = new THREE.Vector3();
+        boundingBox.getCenter(center);
+
+        gsap.to(this.currentCameraLookAt, {
+
+            x: centerLCD.x,
+            y: centerLCD.y + 0.1,
+            z: centerLCD.z,
+            duration: 2,
+
+            onUpdate: () => {
+                this.camera.lookAt(this.currentCameraLookAt.x, this.currentCameraLookAt.y, this.currentCameraLookAt.z)
+                this.camera.updateProjectionMatrix()
+            },
+
+        })
+
+        gsap.to(this.camera, {
+
+            fov: 50,
+            duration: 2,
+
+            onUpdate: () => {
+                this.camera.updateProjectionMatrix()
+            },
+            onComplete: () => {
+
+            }
+
+        })
+
+        gsap.to(this.camera.position, {
+            x: this.carBody.position.x,
+            y: center.y + 0.5,
+            z: this.carBody.position.z,
+            duration: 2,
+
+            onUpdate: () => {
+                this.camera.updateProjectionMatrix()
+            },
+            onComplete: () => {
+                this.isCameraInCar.value = true;
+            }
+
+        })
+
+
+    }
+
     setCurrentCameraLookAt(currentCameraLookAt) {
         this.currentCameraLookAt = currentCameraLookAt
     }
@@ -97,10 +158,15 @@ export class CameraHandler {
             z: this.carBody.position.z,
             duration: 1,
 
+            onUpdate: () => {
+                this.camera.updateProjectionMatrix()
+            },
+
             onComplete: () => {
                 this.userInteracting.value = false
                 this.initialCameraLookAtBillboards.value = false
-        }
+                this.isCameraInCar.value = false
+            }
 
         })
         gsap.to(this.currentCameraLookAt, {
@@ -114,10 +180,20 @@ export class CameraHandler {
                 this.camera.lookAt(this.currentCameraLookAt.x, this.currentCameraLookAt.y, this.currentCameraLookAt.z)
             },
         })
+        gsap.to(this.camera, {
 
+            fov: 75,
+            duration: 1,
+
+            onUpdate: () => {
+                this.camera.updateProjectionMatrix()
+            }
+
+        })
 
 
     }
 
 }
+
 

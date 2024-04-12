@@ -3,14 +3,15 @@ import * as THREE from 'three';
 export class Video {
 
 
-    constructor(sourcePath, scene) {
+    constructor(sourcePath, scene, positionX, positionY, positionZ, rotation, scaleX, scaleY) {
         this.sourcePath = sourcePath
         this.scene = scene
 
-        this.setModelVideo()
+
+        this.setModelVideo(positionX,positionY,positionZ,rotation,scaleX,scaleY)
     }
 
-    setModelVideo() {
+    setModelVideo(positionX,positionY,positionZ,rotation,scaleX,scaleY) {
 
         this.model = {}
 
@@ -34,8 +35,15 @@ export class Video {
         })
 
         // Mesh
-        const geometry = new THREE.PlaneGeometry(200, 200);
+        const geometry = new THREE.PlaneGeometry(2, 2);
         this.model.mesh = new THREE.Mesh(geometry, this.model.material);
+        this.model.mesh.position.x = positionX
+        this.model.mesh.position.y = positionY
+        this.model.mesh.position.z = positionZ
+        this.model.mesh.rotation.y = rotation
+        this.model.mesh.scale.x = scaleX;
+        this.model.mesh.scale.y = scaleY;
+
         this.scene.add(this.model.mesh)
     }
 

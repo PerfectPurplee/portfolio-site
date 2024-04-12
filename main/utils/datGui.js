@@ -6,6 +6,8 @@ export class DatGui {
         this.gui = new GUI()
         this.app = app;
         this.spotLight = this.app.spotLight1
+        this.video1 = this.app.video1;
+        this.video2 = this.app.video2;
 
         const billboardFolder = this.gui.addFolder('Billboard Position');
         const cameraFolder = this.gui.addFolder('Camera')
@@ -17,7 +19,11 @@ export class DatGui {
         cameraFolder.add(app.camera.position, 'x', -100, 100)
         cameraFolder.add(app.camera.position, 'y', -100, 100)
         cameraFolder.add(app.camera.position, 'z', -100, 100)
+        cameraFolder.add(app.camera, 'fov', -100, 100)
+        this.videoFolder = this.gui.addFolder('Video');
         this.addSpotlightToGui()
+        this.addVideoToGui(this.video1)
+        // this.addVideoToGui(this.video2)
         // this.addCSS3DObjectToGui()
         // this.addHtmlCanvasMesh()
 
@@ -87,6 +93,17 @@ export class DatGui {
         canvasFolder.add(this.app.html3D.billboard1Content.scale, 'y', 0.1, 3).name('Y');
 
 
+    }
+
+    addVideoToGui(video) {
+
+
+        this.videoFolder.add(video.model.mesh.position, 'x', -50, 300).name('X');
+        this.videoFolder.add(video.model.mesh.position, 'y', -50, 300).name('Y');
+        this.videoFolder.add(video.model.mesh.position, 'z', -50, 300).name('Z');
+        this.videoFolder.add(video.model.mesh.rotation, 'y', -Math.PI, Math.PI).name('Rotation')
+        this.videoFolder.add(video.model.mesh.scale, 'x', 0.1, 3).name('X');
+        this.videoFolder.add(video.model.mesh.scale, 'y', 0.1, 3).name('Y');
     }
 }
 
