@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
-import {element} from "three/nodes";
+import {bool, element} from "three/nodes";
 
 
 export class Box extends THREE.Mesh {
@@ -113,6 +113,7 @@ export class Car {
 
 export class Billboard {
 
+    isIconScaled;
     constructor(scene, position = {x: 0, y: 0, z: 0},
                 rotation = -Math.PI / 1.2, name, filePath) {
         this.name = name
@@ -126,14 +127,18 @@ export class Billboard {
             this.billboardModel.castShadow = true
             this.billboardModel.receiveShadow = true
             this.billboardModel.scene.userData.name = name
+            this.billboardModel.scene.userData.isScaled = false;
+            this.isIconScaled = this.billboardModel.scene.userData.isScaled;
 
             this.billboardModel.scene.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     child.userData.name = name
+                    child.userData.isScaled = false;
                 }
             });
+
 
 
             scene.add(this.billboardModel.scene)
