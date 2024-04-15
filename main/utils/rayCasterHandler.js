@@ -3,6 +3,8 @@ import {gsap} from "gsap";
 
 export class RayCasterHandler {
 
+    scaledUpIconsArray = [];
+
     constructor(cameraHandler, camera, scene, litOfBillboards, userInteracting, isCameraInCar, listOfSpotlights) {
         this.listOfSpotlights = listOfSpotlights
         this.userInteracting = userInteracting
@@ -95,8 +97,9 @@ export class RayCasterHandler {
             window.open('https://github.com/PerfectPurplee', '_blank')
             // mail
         } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "58485698e0bb315b0f7675a8") {
-            window.open('https://github.com/PerfectPurplee/portfolio-site', '_blank')
-            // Github
+            // Redirect to the mailto link
+            let email = 'simonbalcerzak@gmail.com';
+            window.location.href = 'mailto:' + email;
         } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
             intersectsClick[0].object.userData.name === "car" && this.isCameraInCar.value === true) {
             window.open('https://github.com/PerfectPurplee', '_blank')
