@@ -3,6 +3,8 @@ import {gsap} from "gsap";
 
 export class RayCasterHandler {
 
+    scaledUpIconsArray = [];
+
     constructor(cameraHandler, camera, scene, litOfBillboards, userInteracting, isCameraInCar, listOfSpotlights) {
         this.listOfSpotlights = listOfSpotlights
         this.userInteracting = userInteracting
@@ -48,6 +50,7 @@ export class RayCasterHandler {
             })
         }
     }
+
     // intersectsClick[0].object.scale.x += 5;
     handleRayCasterPointerClick() {
         this.raycaster.setFromCamera(this.pointerClick, this.camera)
@@ -64,15 +67,16 @@ export class RayCasterHandler {
             intersectsClick[0].object.userData.name === "billboard3" && this.userInteracting.value === true) {
             window.open('https://github.com/PerfectPurplee/portfolio-site', '_blank')
         }
-        //Icons in car
+            //Icons in car
         //LinkedIn
         else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "linkedin-with-circle-icon-512x512-cvyrro5n") {
             window.open('https://github.com/PerfectPurplee', '_blank')
-        // mail
-        }else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "58485698e0bb315b0f7675a8") {
-            window.open('https://github.com/PerfectPurplee/portfolio-site', '_blank')
-        // Github
-        }else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
+            // mail
+        } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "58485698e0bb315b0f7675a8") {
+            // Redirect to the mailto link
+            let email = 'simonbalcerzak@gmail.com';
+            window.location.href = 'mailto:' + email;
+        } else if (intersectsClick.length > 0 && intersectsClick[0].object.material.name === "GitHub-logo" &&
             intersectsClick[0].object.userData.name === "car" && this.isCameraInCar.value === true) {
             window.open('https://github.com/PerfectPurplee', '_blank')
         }
