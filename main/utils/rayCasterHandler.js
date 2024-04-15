@@ -22,6 +22,30 @@ export class RayCasterHandler {
     handleRayCasterPointerMove() {
         this.raycaster.setFromCamera(this.pointerMove, this.camera)
         const intersectsMove = this.raycaster.intersectObjects(this.scene.children);
+        //  Scaling icons
+        if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
+            intersectsMove[0].object.userData.name === "billboard1" && this.userInteracting.value === true) {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+        } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
+            intersectsMove[0].object.userData.name === "billboard2" && this.userInteracting.value === true) {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+        } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
+            intersectsMove[0].object.userData.name === "billboard3" && this.userInteracting.value === true) {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+        }//Icons in car
+        //LinkedIn
+        else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "linkedin-with-circle-icon-512x512-cvyrro5n") {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+        }// mail
+        else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "58485698e0bb315b0f7675a8") {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            // Github
+        } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
+            intersectsMove[0].object.userData.name === "car" && this.isCameraInCar.value === true) {
+            this.setScaleForIconButton(intersectsMove[0].object, 1)
+        }
+          else  this.scaleBackIconButtons();
+
         // Turns on/off spotlights on billboards on mouse hover
         if (intersectsMove.length > 0 && (
             intersectsMove[0].object.userData.name === "billboard1" ||
@@ -110,6 +134,27 @@ export class RayCasterHandler {
         if (billboardName === "billboard2") return this.listOfSpotlights[1]
         if (billboardName === "billboard3") return this.listOfSpotlights[2]
     }
+
+    setScaleForIconButton(object, scaleValue) {
+
+        if (!object.userData.isScaled) {
+            object.scale.x += scaleValue;
+            object.scale.y += scaleValue;
+            object.userData.isScaled = true;
+        }
+
+    }
+
+    scaleBackIconButtons() {
+       this.listOfBillboards.forEach((billboard) => {
+           if (billboard.billboardModel.scene.userData.isScaled === true) {
+               billboard.billboardModel.scene.scale.x = 1;
+               billboard.billboardModel.scene.scale.y = 1;
+               billboard.billboardModel.scene.userData.isScaled = false;
+           }
+       })
+    }
+
 
 }
 
