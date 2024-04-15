@@ -3,7 +3,8 @@ import {gsap} from "gsap";
 
 export class RayCasterHandler {
 
-    scaledUpIconsArray = [];
+    scaledUpIconsSet = new Set();
+    scaleValue = 0.5;
 
     constructor(cameraHandler, camera, scene, litOfBillboards, userInteracting, isCameraInCar, listOfSpotlights) {
         this.listOfSpotlights = listOfSpotlights
@@ -25,26 +26,31 @@ export class RayCasterHandler {
         //  Scaling icons
         if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
             intersectsMove[0].object.userData.name === "billboard1" && this.userInteracting.value === true) {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
         } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
             intersectsMove[0].object.userData.name === "billboard2" && this.userInteracting.value === true) {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
         } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
             intersectsMove[0].object.userData.name === "billboard3" && this.userInteracting.value === true) {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
         }//Icons in car
         //LinkedIn
         else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "linkedin-with-circle-icon-512x512-cvyrro5n") {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
         }// mail
         else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "58485698e0bb315b0f7675a8") {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
             // Github
         } else if (intersectsMove.length > 0 && intersectsMove[0].object.material.name === "GitHub-logo" &&
             intersectsMove[0].object.userData.name === "car" && this.isCameraInCar.value === true) {
-            this.setScaleForIconButton(intersectsMove[0].object, 1)
-        }
-          else  this.scaleBackIconButtons();
+            this.setScaleForIconButton(intersectsMove[0].object, this.scaleValue)
+            this.scaledUpIconsSet.add(intersectsMove[0].object);
+        } else this.scaleBackIconButtons();
 
         // Turns on/off spotlights on billboards on mouse hover
         if (intersectsMove.length > 0 && (
@@ -139,20 +145,23 @@ export class RayCasterHandler {
 
         if (!object.userData.isScaled) {
             object.scale.x += scaleValue;
-            object.scale.y += scaleValue;
+            object.scale.z += scaleValue;
             object.userData.isScaled = true;
         }
 
     }
 
     scaleBackIconButtons() {
-       this.listOfBillboards.forEach((billboard) => {
-           if (billboard.billboardModel.scene.userData.isScaled === true) {
-               billboard.billboardModel.scene.scale.x = 1;
-               billboard.billboardModel.scene.scale.y = 1;
-               billboard.billboardModel.scene.userData.isScaled = false;
-           }
-       })
+        console.log(this.scaledUpIconsSet)
+        this.scaledUpIconsSet.forEach(element => {
+            if(element.userData.isScaled) {
+            element.scale.x -= this.scaleValue;
+            element.scale.z -= this.scaleValue;
+
+            element.userData.isScaled = false;
+                }
+        })
+        this.scaledUpIconsSet.clear();
     }
 
 

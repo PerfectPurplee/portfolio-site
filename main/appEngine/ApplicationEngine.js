@@ -40,7 +40,7 @@ export class ApplicationEngine {
         this.createCanvasRectangleMesh()
         this.video1 = new Video('./assets/video/AetherArena.mov', this.scene,
             42.5, 7.7, -4.3, -Math.PI / 2, 2.9, 2);
-        // this.video2 = new Video('./assets/video/test.mkv', this.scene);
+        this.video2 = new Video('./assets/video/portfolio.mkv', this.scene,    38.9, 7.7, 11.3, -2.3, 2.9, 2);
 
         // Button interactions
         this.welcomeButton = document.getElementById("welcomeButton")

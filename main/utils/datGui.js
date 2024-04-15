@@ -22,8 +22,8 @@ export class DatGui {
         cameraFolder.add(app.camera, 'fov', -100, 100)
         this.videoFolder = this.gui.addFolder('Video');
         this.addSpotlightToGui()
-        this.addVideoToGui(this.video1)
-        // this.addVideoToGui(this.video2)
+        // this.addVideoToGui(this.video1)
+        this.addVideoToGui(this.video2)
         // this.addCSS3DObjectToGui()
         // this.addHtmlCanvasMesh()
 
